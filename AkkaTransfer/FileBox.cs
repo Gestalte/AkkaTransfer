@@ -4,8 +4,8 @@
     {
         public FileBox()
         {
-            MakeBox();
             BoxPath = "";
+            MakeBox();
         }
 
         public string BoxPath { get; set; }
