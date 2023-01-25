@@ -4,17 +4,21 @@ using Akka.Actor;
 using Akka.Util.Internal;
 using AkkaTransfer;
 
-ActorSystem system = ActorSystem.Create("file-transfer");
+var hocon = HoconLoader.FromFile("akka.net.hocon");
 
-Props props = Props.Create(typeof(SendFileActor), new FileSendBox());
+ActorSystem system = ActorSystem.Create("server-system", hocon);
 
-IActorRef sendFileActor = system.ActorOf(props, "send-file-actor");
+Props sendProps = Props.Create(typeof(SendFileActor), new FileSendBox());
+Props receiveProps = Props.Create(typeof(ReceiveFileActor), new FileReceiveBox());
+
+IActorRef sendFileActor = system.ActorOf(sendProps, "send-file-actor");
+IActorRef receiveFileActor = system.ActorOf(receiveProps, "receive-file-actor");
 
 FileSendBox fileSendBox = new();
 
 fileSendBox.GetFilesInBox()
     .Select(filePath => Path.GetFileName(filePath))
-    .ForEach(fileName => 
+    .ForEach(fileName =>
     {
         sendFileActor.Tell(new SendFileMessage(fileName));
         Console.WriteLine(fileName + " has been Sent!");
@@ -22,4 +26,4 @@ fileSendBox.GetFilesInBox()
 
 Console.Read();
 
-system.Terminate();
+system.Terminate().Wait();
