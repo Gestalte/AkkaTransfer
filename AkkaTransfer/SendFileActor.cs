@@ -34,7 +34,7 @@ namespace AkkaTransfer
         {
             var fileName = message.FileName;
 
-            var pathToSend = Box.GetFilesToSend().Where(s => Path.GetFileName(s) == fileName).FirstOrDefault();
+            var pathToSend = Box.GetFilesInBox().Where(s => Path.GetFileName(s) == fileName).FirstOrDefault();
 
             if (pathToSend != null)
             {

@@ -6,25 +6,15 @@ using System.Threading.Tasks;
 
 namespace AkkaTransfer
 {
-    public class FileReceiveBox
+    public class FileReceiveBox : FileBox
     {
-        public FileReceiveBox()
-        {
-            MakeReceiveBox();
-        }
-
-        public string ReceiveBoxPath { get; set; }
-
-        public void MakeReceiveBox()
+        public override void MakeBox()
         {
             var directory = Directory.GetCurrentDirectory();
 
             var receiveBoxnfo = Directory.CreateDirectory(Path.Combine(directory, "ReceiveBox"));
 
-            ReceiveBoxPath = receiveBoxnfo.FullName;
+            BoxPath = receiveBoxnfo.FullName;
         }
-
-        public List<string> GetFilesReceived()
-            => Directory.GetFiles(ReceiveBoxPath).ToList();
     }
 }

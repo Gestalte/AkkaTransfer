@@ -23,7 +23,7 @@ namespace AkkaTransfer
             var name = message.FileName;
             var bytes = message.Bytes;
 
-            var savePath = Box.ReceiveBoxPath;
+            var savePath = Box.BoxPath;
 
             File.WriteAllBytes(Path.Combine(savePath, name), bytes);
         }

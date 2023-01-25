@@ -12,7 +12,7 @@ namespace AkkaTransfer
 
             var result = new ReceiveManifest
             {
-                FileNames = box.GetFilesReceived()
+                FileNames = box.GetFilesInBox()
                 .Select(s => Path.GetFileName(s))
                 .ToList()
             };

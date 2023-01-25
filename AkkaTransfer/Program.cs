@@ -12,7 +12,7 @@ IActorRef sendFileActor = system.ActorOf(props, "send-file-actor");
 
 FileSendBox fileSendBox = new FileSendBox();
 
-fileSendBox.GetFilesToSend()
+fileSendBox.GetFilesInBox()
     .Select(filePath => Path.GetFileName(filePath))
     .ForEach(fileName => 
     {

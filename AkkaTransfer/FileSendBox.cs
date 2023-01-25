@@ -6,25 +6,15 @@ using System.Threading.Tasks;
 
 namespace AkkaTransfer
 {
-    public class FileSendBox
+    public class FileSendBox : FileBox
     {
-        public FileSendBox()
-        {
-            MakeSendBox();
-        }
-
-        public string SendBoxPath { get; set; } 
-
-        public void MakeSendBox()
+        public override void MakeBox()
         {
             var directory = Directory.GetCurrentDirectory();
 
-            var sendBoxInfo=Directory.CreateDirectory(Path.Combine(directory, "SendBox"));
+            var sendBoxInfo = Directory.CreateDirectory(Path.Combine(directory, "SendBox"));
 
-            SendBoxPath = sendBoxInfo.FullName;
+            BoxPath = sendBoxInfo.FullName;
         }
-
-        public List<string> GetFilesToSend() 
-            => Directory.GetFiles(SendBoxPath).ToList();
     }
 }
