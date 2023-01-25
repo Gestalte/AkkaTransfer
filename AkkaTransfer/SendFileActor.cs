@@ -10,11 +10,21 @@ namespace AkkaTransfer
 {
     public class SendFileMessage
     {
+        public SendFileMessage(string fileName)
+        {
+            FileName = fileName;
+        }
         public string FileName { get; set; }
     }
 
     public class FilePayloadMessage
     {
+        public FilePayloadMessage(string fileName, byte[] bytes)
+        {
+            FileName = fileName;
+            Bytes = bytes;
+        }
+
         public string FileName { get; set; }
         public byte[] Bytes { get; set; }
     }
@@ -40,17 +50,11 @@ namespace AkkaTransfer
             {
                 var bytes = File.ReadAllBytes(pathToSend);
 
-                var payload = new FilePayloadMessage
-                {
-                    FileName = fileName,
-                    Bytes = bytes
-                };
-
                 var props = Props.Create<ReceiveFileActor>(new FileReceiveBox());
 
                 var receiveActor = Context.ActorOf(props);
 
-                receiveActor.Tell(payload);
+                receiveActor.Tell(new FilePayloadMessage(fileName, bytes));
             }
         }
     }

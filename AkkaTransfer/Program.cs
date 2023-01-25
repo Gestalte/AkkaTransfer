@@ -10,13 +10,13 @@ Props props = Props.Create(typeof(SendFileActor), new FileSendBox());
 
 IActorRef sendFileActor = system.ActorOf(props, "send-file-actor");
 
-FileSendBox fileSendBox = new FileSendBox();
+FileSendBox fileSendBox = new();
 
 fileSendBox.GetFilesInBox()
     .Select(filePath => Path.GetFileName(filePath))
     .ForEach(fileName => 
     {
-        sendFileActor.Tell(new SendFileMessage { FileName = fileName });
+        sendFileActor.Tell(new SendFileMessage(fileName));
         Console.WriteLine(fileName + " has been Sent!");
     });
 

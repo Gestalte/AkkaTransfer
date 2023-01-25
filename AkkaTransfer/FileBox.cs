@@ -5,6 +5,7 @@
         public FileBox()
         {
             MakeBox();
+            BoxPath = "";
         }
 
         public string BoxPath { get; set; }
