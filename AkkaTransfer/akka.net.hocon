@@ -1,0 +1,17 @@
+﻿akka {
+	actor {
+		provider = "Akka.Remote.RemoteActorRefProvider, Akka.Remote"
+			deployment {
+				/receive-file-actor {
+					remote = "akka.tcp://server-system@localhost:8888"
+				}
+			}
+		}
+
+	remote {
+		dot-netty.tcp {
+			port = 0
+			hostname = localhost
+		}
+	}
+}
