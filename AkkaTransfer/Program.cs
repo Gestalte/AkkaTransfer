@@ -1,22 +1,24 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using Akka.Actor;
+using Akka.Util.Internal;
 using AkkaTransfer;
 
 ActorSystem system = ActorSystem.Create("file-transfer");
 
-IActorRef listReceivedFilesActor = system.ActorOf<ListReceivedFilesActor>("list-received-files");
+Props props = Props.Create(typeof(SendFileActor), new FileSendBox());
 
-var result = await listReceivedFilesActor.Ask(new RequestReceivedFilesMessage()) as ReceiveManifest;
+IActorRef sendFileActor = system.ActorOf(props, "send-file-actor");
 
-if (result?.FileNames.Count > 0)
-{
-    result.FileNames.ForEach(f => Console.WriteLine(f));
-}
-else
-{
-    Console.WriteLine("No files in ReceiveBox");
-}
+FileSendBox fileSendBox = new FileSendBox();
+
+fileSendBox.GetFilesToSend()
+    .Select(filePath => Path.GetFileName(filePath))
+    .ForEach(fileName => 
+    {
+        sendFileActor.Tell(new SendFileMessage { FileName = fileName });
+        Console.WriteLine(fileName + " has been Sent!");
+    });
 
 Console.Read();
 
