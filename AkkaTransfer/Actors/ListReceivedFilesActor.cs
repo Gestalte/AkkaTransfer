@@ -1,6 +1,6 @@
 ﻿using Akka.Actor;
 
-namespace AkkaTransfer
+namespace AkkaTransfer.Actors
 {
     public class RequestReceivedFilesMessage { }
 

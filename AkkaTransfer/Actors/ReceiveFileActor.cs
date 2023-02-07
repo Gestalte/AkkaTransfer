@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AkkaTransfer
+namespace AkkaTransfer.Actors
 {
     public class ReceiveFileActor : ReceiveActor
     {

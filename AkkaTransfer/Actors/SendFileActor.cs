@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AkkaTransfer
+namespace AkkaTransfer.Actors
 {
     public class SendFileMessage
     {
@@ -31,11 +31,11 @@ namespace AkkaTransfer
 
     internal class SendFileActor : ReceiveActor
     {
-        public FileSendBox Box { get; set; }
+        private readonly FileBox sendFileBox;
 
-        public SendFileActor(FileSendBox box)
+        public SendFileActor(FileBox sendFilebox)
         {
-            Box = box;
+            this.sendFileBox = sendFilebox;
 
             Receive<SendFileMessage>(message => Handle(message));
         }
@@ -44,15 +44,15 @@ namespace AkkaTransfer
         {
             var fileName = message.FileName;
 
-            var pathToSend = Box.GetFilesInBox().Where(s => Path.GetFileName(s) == fileName).FirstOrDefault();
+            var pathToSend = this.sendFileBox.GetFilesInBox()
+                .Where(s => Path.GetFileName(s) == fileName)
+                .FirstOrDefault();
 
             if (pathToSend != null)
             {
                 var bytes = File.ReadAllBytes(pathToSend);
 
-                var props = Props.Create<ReceiveFileActor>(new FileReceiveBox());
-
-                var receiveActor = Context.ActorOf(props);
+                var receiveActor = Context.ActorSelection("akka.tcp://server-system@10.0.0.106:8081/user/receive-file-actor");
 
                 receiveActor.Tell(new FilePayloadMessage(fileName, bytes));
             }
