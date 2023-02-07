@@ -1,61 +1,57 @@
 ﻿using Akka.Actor;
-using Akka.Actor.Dsl;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Akka.Routing;
+using AkkaTransfer.Messages;
 
 namespace AkkaTransfer.Actors
 {
-    public class SendFileMessage
+    public class SendFileActor : ReceiveActor
     {
-        public SendFileMessage(string fileName)
-        {
-            FileName = fileName;
-        }
-        public string FileName { get; set; }
-    }
-
-    public class FilePayloadMessage
-    {
-        public FilePayloadMessage(string fileName, byte[] bytes)
-        {
-            FileName = fileName;
-            Bytes = bytes;
-        }
-
-        public string FileName { get; set; }
-        public byte[] Bytes { get; set; }
-    }
-
-    internal class SendFileActor : ReceiveActor
-    {
-        private readonly FileBox sendFileBox;
-
         public SendFileActor(FileBox sendFilebox)
         {
-            this.sendFileBox = sendFilebox;
+            Receive<string>(filename =>
+            {
+                const int batchSize = 1000;
 
-            Receive<SendFileMessage>(message => Handle(message));
+                var pathToSend = sendFilebox.GetFilesInBox()
+                    .Where(s => Path.GetFileName(s) == filename)
+                    .FirstOrDefault()
+                    ?? throw new ArgumentException("File not found in SendBox", nameof(filename));
+
+                byte[] bytes = File.ReadAllBytes(pathToSend);
+
+                // if bytes.Length / 1000 has a rest, add 1 so that a batch is still created.
+                var batchCount = (bytes.Length / batchSize) + ((bytes.Length % batchSize) > 0 ? 1 : 0);
+                var rest = bytes.Length % batchSize; // Size of the last batch that doesn't fill the entire batchSize.
+                bool hasRest = rest > 0;
+
+                FilePartMessage[] filePartMessages = new FilePartMessage[batchCount];
+
+                for (int i = 0; i < batchCount; i++)
+                {
+                    var newArray = (hasRest && i == batchCount - 1)
+                        ? makeBatchArray(bytes, rest, i)
+                        : makeBatchArray(bytes, batchSize, i);
+
+                    filePartMessages[i] = new FilePartMessage(newArray, i, batchCount, filename);
+                }
+
+                Props props = Props.Create<SendPartActor>().WithRouter(new RoundRobinPool(100, new DefaultResizer(50, 1000)));
+                var sendRouter = Context.ActorOf(props);
+
+                foreach (var filePartMessage in filePartMessages)
+                {
+                    sendRouter.Tell(filePartMessage);
+                }
+            });
         }
 
-        private void Handle(SendFileMessage message)
+        private byte[] makeBatchArray(byte[] bytes, int size, int iter)
         {
-            var fileName = message.FileName;
+            Byte[] newArray = new Byte[size];
 
-            var pathToSend = this.sendFileBox.GetFilesInBox()
-                .Where(s => Path.GetFileName(s) == fileName)
-                .FirstOrDefault();
+            Array.Copy(bytes, iter * 1000, newArray, 0, size);
 
-            if (pathToSend != null)
-            {
-                var bytes = File.ReadAllBytes(pathToSend);
-
-                var receiveActor = Context.ActorSelection("akka.tcp://server-system@10.0.0.106:8081/user/receive-file-actor");
-
-                receiveActor.Tell(new FilePayloadMessage(fileName, bytes));
-            }
+            return newArray;
         }
     }
 }

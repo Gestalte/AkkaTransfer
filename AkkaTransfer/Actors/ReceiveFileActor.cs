@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,23 +10,20 @@ namespace AkkaTransfer.Actors
 {
     public class ReceiveFileActor : ReceiveActor
     {
-        public FileReceiveBox Box { get; }
+        public FileBox Box { get; }
 
-        public ReceiveFileActor(FileReceiveBox box)
+        public ReceiveFileActor(FileBox box)
         {
             Box = box;
 
-            Receive<FilePayloadMessage>(message => Handle(message));
+            Receive<FilePartMessage>(message => Handle(message));
         }
 
-        private void Handle(FilePayloadMessage message)
+        private void Handle(FilePartMessage message)
         {
-            var name = message.FileName;
-            var bytes = message.Bytes;
+            Console.WriteLine($"Receive part {message.Position} of {message.Count}");
 
-            var savePath = Box.BoxPath;
-
-            File.WriteAllBytes(Path.Combine(savePath, name), bytes);
+            // TODO: Save FilePartMessage to db
         }
     }
 }
