@@ -1,11 +1,10 @@
 ﻿namespace AkkaTransfer
 {
-    public abstract class FileBox
+    public  class FileBox
     {
-        public FileBox()
+        public FileBox(string boxName)
         {
-            BoxPath = "";
-            MakeBox();
+            BoxPath = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), boxName)).FullName;
         }
 
         public string BoxPath { get; set; }
@@ -13,6 +12,5 @@
         public List<string> GetFilesInBox()
             => Directory.GetFiles(BoxPath).ToList();
 
-        public abstract void MakeBox();
     }
 }
