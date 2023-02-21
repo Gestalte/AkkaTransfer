@@ -1,12 +1,6 @@
 ﻿using Akka.Actor;
-using Akka.Event;
 using AkkaTransfer.Data;
 using AkkaTransfer.Messages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AkkaTransfer.Actors
 {
@@ -28,8 +22,17 @@ namespace AkkaTransfer.Actors
         private void Handle(FilePartMessage message)
         {
             System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");
+            var id = this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
 
-            this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
+            var props = Props.Create(() => new FileRebuilderActor(Box, this.fileHeaderRepository));
+            var transactionActor = Context.ActorOf(props, "file-rebuilder-actor");
+
+            if (id == -1)
+            {
+                return;
+            }
+
+            transactionActor.Tell(id);
         }
     }
 }
