@@ -5,7 +5,8 @@ namespace AkkaTransfer.Data
     public interface IFileHeaderRepository
     {
         void AddNewPieceUnitOfWork(FilePartMessage filePartMessage);
-        FileHeader? GetFileHeaderByFilename(string fileName);
+        FileHeader? GetFileHeaderById(int Id);
+        void DeleteFileHeader(int Id);
         bool HasEntireFileBeenReceived(int fileHeaderId);
     }
 }

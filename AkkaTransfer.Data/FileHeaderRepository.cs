@@ -14,13 +14,29 @@ namespace AkkaTransfer.Data
             this.context = context;
         }
 
-        public FileHeader? GetFileHeaderByFilename(string fileName)
+        public FileHeader? GetFileHeaderById(int Id)
         {
             return this.context.FileHeaders
                 .AsNoTracking()
-                .Where(s => s.FileName == fileName)
+                .Where(s => s.FileHeaderId == Id)
                 .Include(i => i.FilePieces)
                 .FirstOrDefault();
+        }
+
+        public void DeleteFileHeader(int Id)
+        {
+            var header = this.context.FileHeaders
+                .AsNoTracking()
+                .Where(s => s.FileHeaderId == Id)
+                .Include(i => i.FilePieces)
+                .FirstOrDefault();
+
+            //foreach (var piece in header.FilePieces)
+            //{
+            //    header.FilePieces.Remove(piece);
+            //}
+
+            this.context.FileHeaders.Remove(header);
         }
 
         public bool HasEntireFileBeenReceived(int fileHeaderId)
@@ -54,7 +70,7 @@ namespace AkkaTransfer.Data
 
                 if (piece != null)
                 {
-                    Debug.WriteLine("Attempted to save duplicate piece at position: " + filePartMessage.Position);
+                    Debug.WriteLine($"Attempted to save duplicate piece at position {filePartMessage.Position} of {filePartMessage.Count}.");
 
                     return;
                 }
