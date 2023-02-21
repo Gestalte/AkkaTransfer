@@ -35,7 +35,7 @@ namespace AkkaTransfer.Actors
                     filePartMessages[i] = new FilePartMessage(newArray, i, batchCount, filename);
                 }
 
-                Props props = Props.Create<SendPartActor>().WithRouter(new RoundRobinPool(100, new DefaultResizer(50, 1000)));
+                Props props = Props.Create<SendPartActor>().WithRouter(new RoundRobinPool(5, new DefaultResizer(5, 1000)));
                 var sendRouter = Context.ActorOf(props);
 
                 foreach (var filePartMessage in filePartMessages)
