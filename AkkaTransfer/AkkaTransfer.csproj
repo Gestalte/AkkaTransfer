@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AkkaTransfer.Common\AkkaTransfer.Common.csproj" />
+    <ProjectReference Include="..\AkkaTransfer.Data\AkkaTransfer.Data.csproj" />
   </ItemGroup>
 
 </Project>
