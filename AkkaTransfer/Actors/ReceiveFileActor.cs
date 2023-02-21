@@ -1,4 +1,6 @@
 ﻿using Akka.Actor;
+using Akka.Event;
+using AkkaTransfer.Data;
 using AkkaTransfer.Messages;
 using System;
 using System.Collections.Generic;
@@ -10,10 +12,14 @@ namespace AkkaTransfer.Actors
 {
     public class ReceiveFileActor : ReceiveActor
     {
+        private readonly IFileHeaderRepository fileHeaderRepository;
+
         public FileBox Box { get; }
 
-        public ReceiveFileActor(FileBox box)
+        public ReceiveFileActor(FileBox box, IFileHeaderRepository fileHeaderRepository)
         {
+            this.fileHeaderRepository = fileHeaderRepository;
+
             Box = box;
 
             Receive<FilePartMessage>(message => Handle(message));
@@ -21,9 +27,9 @@ namespace AkkaTransfer.Actors
 
         private void Handle(FilePartMessage message)
         {
-            Console.WriteLine($"Receive part {message.Position} of {message.Count}");
+            System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");
 
-            // TODO: Save FilePartMessage to db
+            this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
         }
     }
 }
