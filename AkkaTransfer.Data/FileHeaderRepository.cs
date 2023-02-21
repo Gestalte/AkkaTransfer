@@ -54,7 +54,7 @@ namespace AkkaTransfer.Data
             return header.PieceCount == header.FilePieces.Count;
         }
 
-        public void AddNewPieceUnitOfWork(FilePartMessage filePartMessage)
+        public int AddNewPieceUnitOfWork(FilePartMessage filePartMessage)
         {
             var header = this.context.FileHeaders
                 .Where(s => s.FileName == filePartMessage.Filename)
@@ -72,7 +72,7 @@ namespace AkkaTransfer.Data
                 {
                     Debug.WriteLine($"Attempted to save duplicate piece at position {filePartMessage.Position} of {filePartMessage.Count}.");
 
-                    return;
+                    return -1;
                 }
 
                 FilePiece newPiece = new FilePiece
@@ -85,7 +85,7 @@ namespace AkkaTransfer.Data
             }
             else
             {
-                this.context.FileHeaders.Add(new FileHeader
+                header = this.context.FileHeaders.Add(new FileHeader
                 {
                     FileName = filePartMessage.Filename,
                     PieceCount = filePartMessage.Count,
@@ -97,10 +97,12 @@ namespace AkkaTransfer.Data
                             Position = filePartMessage.Position,
                         }
                     }
-                });
+                }).Entity;
             }
 
             this.context.SaveChanges();
+
+            return header.FileHeaderId;
         }
     }
 }
