@@ -31,14 +31,20 @@ namespace AkkaTransfer.Actors
                 var headerPieces = header.FilePieces
                     .AsParallel()
                     .AsOrdered()
-                    .OrderBy(s=>s.Position)
+                    .OrderBy(s => s.Position)
                     .Select(s => s.Content)
                     .SelectMany(s => s)
-                    .ToArray();
+                    .ToString();
 
-                File.WriteAllBytes(Path.Combine(this.receiveBox.BoxPath, header.FileName), headerPieces);
+                Console.WriteLine(headerPieces);
+
+                byte[] newBytes = Convert.FromBase64String(headerPieces);
+
+                File.WriteAllBytes(Path.Combine(this.receiveBox.BoxPath, header.FileName), newBytes);
 
                 this.fileHeaderRepository.DeleteFileHeader(id);
+
+                Console.WriteLine("File fully received: " + header.FileName);
             }
             else
             {
