@@ -1,9 +1,8 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Common;
 using AkkaTransfer.Data;
-using AkkaTransfer.Messages;
 
-namespace AkkaTransfer.Actors
-{
+namespace AkkaTransfer.Actors {
     public class ReceiveFileActor : ReceiveActor
     {
         private readonly IFileHeaderRepository fileHeaderRepository;

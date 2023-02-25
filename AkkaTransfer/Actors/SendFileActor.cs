@@ -1,6 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Routing;
-using AkkaTransfer.Messages;
+using AkkaTransfer.Common;
 
 namespace AkkaTransfer.Actors
 {

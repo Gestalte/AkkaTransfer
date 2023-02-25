@@ -1,7 +1,6 @@
-﻿using AkkaTransfer.Messages;
+﻿using AkkaTransfer.Common;
 
-namespace AkkaTransfer.Data
-{
+namespace AkkaTransfer.Data {
     public interface IFileHeaderRepository
     {
         int AddNewPieceUnitOfWork(FilePartMessage filePartMessage);

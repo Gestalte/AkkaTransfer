@@ -1,9 +1,8 @@
-﻿using AkkaTransfer.Messages;
+﻿using AkkaTransfer.Common;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
-namespace AkkaTransfer.Data
-{
+namespace AkkaTransfer.Data {
     public class FileHeaderRepository : IFileHeaderRepository
     {
         private readonly ReceiveDbContext context;

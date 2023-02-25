@@ -1,4 +1,4 @@
-﻿namespace AkkaTransfer.Messages
+﻿namespace AkkaTransfer.Common
 {
     public class FilePartMessage
     {

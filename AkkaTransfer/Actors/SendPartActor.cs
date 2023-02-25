@@ -1,8 +1,7 @@
 ﻿using Akka.Actor;
-using AkkaTransfer.Messages;
+using AkkaTransfer.Common;
 
-namespace AkkaTransfer.Actors
-{
+namespace AkkaTransfer.Actors {
     public class SendPartActor : ReceiveActor
     {
         public SendPartActor()
@@ -11,7 +10,9 @@ namespace AkkaTransfer.Actors
             {
                 Console.WriteLine($"Send part {message.Position} of {message.Count}");
 
-                var receiveActor = Context.ActorSelection($"akka.tcp://file-transfer-system@{HoconLoader.ReadSendIpAndPort("hocon.send")}/user/receive-file-actor");
+                var address = $"akka.tcp://file-transfer-system@{HoconLoader.ReadSendIpAndPort("hocon.send")}/user/receive-file-actor";
+
+                var receiveActor = Context.ActorSelection(address);
 
                 receiveActor.Tell(message);
             });
