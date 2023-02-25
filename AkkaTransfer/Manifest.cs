@@ -26,36 +26,26 @@ namespace AkkaTransfer.Common
         /// Returns only the files present in the newer Manifest that are not 
         /// present in the older Manifest.
         /// </summary>
-        /// <param name="manifest1"></param>
-        /// <param name="Manifest2"></param>
-        /// <returns>Manifest</returns>
+        /// <param name="newerManifest"></param>
+        /// <param name="olderManifest"></param>
+        /// <returns>New Manifest</returns>
         public static Manifest SubtractManifestFiles(Manifest newerManifest, Manifest olderManifest)
         {
-            if (newerManifest.Files == olderManifest.Files)
+            if (olderManifest.Files == null && newerManifest.Files != null)
             {
                 return new Manifest(newerManifest.Files);
             }
-            else if (newerManifest.Files == null && olderManifest.Files != null)
-            {
-                return new Manifest(olderManifest.Files);
-            }
-            else if (olderManifest.Files == null && newerManifest.Files != null)
-            {
-                return new Manifest(newerManifest.Files);
-            }
-            else
-            {
-                // Sselect files that have hash codes that do not exist in
-                // the old Manifest. The idea is that if a file exists in both
-                // manifests, it should not be copied again.
-                var files = newerManifest?.Files?
-                    .Where(s => olderManifest?.Files?
-                        .Select(s => s.FileHash)
-                        .Contains(s.FileHash) ?? false == false)
-                    .ToArray();
 
-                return new Manifest(files);
-            }
+            // Select files that have hash codes that do not exist in the old
+            // Manifest. The idea is that if a file exists in both manifests,
+            // it should not be copied again.
+            var files = newerManifest?.Files?
+                .Where(s => olderManifest?.Files?
+                    .Select(s => s.FileHash)
+                    .Contains(s.FileHash) ?? false == false)
+                .ToArray();
+
+            return new Manifest(files);
         }
     }
 
