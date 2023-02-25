@@ -40,10 +40,7 @@ IActorRef receiveGateway = system.ActorOf(receiveGatewayProps, "receive-file-act
 
 fileSendBox.GetFilesInBox()
     .Select(filePath => Path.GetFileName(filePath))
-    .ForEach(fileName =>
-    {
-        sendFileActor.Tell(fileName);
-    });
+    .ForEach(sendFileActor.Tell);
 
 while (true)
 {

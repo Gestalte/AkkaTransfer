@@ -30,7 +30,7 @@ namespace AkkaTransfer.Actors
             });
         }
 
-        private FilePartMessage[] SplitIntoMessages(string pathToSend, string filename)
+        private static FilePartMessage[] SplitIntoMessages(string pathToSend, string filename)
         {
             var bytes = File.ReadAllBytes(pathToSend);
             var base64 = Convert.ToBase64String(bytes);
@@ -57,7 +57,7 @@ namespace AkkaTransfer.Actors
             return filePartMessages;
         }
 
-        public string FindFilePath(string filename, FileBox box)
+        public static string FindFilePath(string filename, FileBox box)
         {
             return box.GetFilesInBox()
                     .Where(s => Path.GetFileName(s) == filename)

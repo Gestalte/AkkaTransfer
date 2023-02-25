@@ -13,6 +13,7 @@ namespace AkkaTransfer.Data
             this.context = context;
         }
 
+#nullable enable
         public FileHeader? GetFileHeaderById(int Id)
         {
             return this.context.FileHeaders
@@ -21,6 +22,7 @@ namespace AkkaTransfer.Data
                 .Include(i => i.FilePieces.OrderBy(o => o.Position))
                 .FirstOrDefault();
         }
+#nullable disable
 
         public void DeleteFileHeader(int Id)
         {
@@ -74,7 +76,7 @@ namespace AkkaTransfer.Data
                     return -1;
                 }
 
-                FilePiece newPiece = new FilePiece
+                FilePiece newPiece = new()
                 {
                     Content = filePartMessage.FilePart,
                     Position = filePartMessage.Position,
