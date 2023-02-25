@@ -25,7 +25,7 @@ FileBox fileSendBox = new("SendBox");
 FileBox fileReceiveBox = new("ReceiveBox");
 
 Props sendProps = Props.Create(typeof(SendFileActor), fileSendBox);
-Props receiveProps = Props.Create(typeof(ReceiveFileActor), fileReceiveBox);
+Props receiveProps = Props.Create(typeof(ReceiveFileActor), fileReceiveBox, repo);
 Props rebuilderProps =Props.Create(typeof(FileRebuilderActor), fileSendBox, repo);
 
 IActorRef sendFileActor = system.ActorOf(sendProps, "send-file-actor");

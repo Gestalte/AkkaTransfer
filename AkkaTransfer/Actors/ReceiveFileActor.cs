@@ -8,13 +8,13 @@ namespace AkkaTransfer.Actors
     {
         private readonly IFileHeaderRepository fileHeaderRepository;
 
-        public FileBox Box { get; }
+        public readonly FileBox box;
 
         public ReceiveFileActor(FileBox box, IFileHeaderRepository fileHeaderRepository)
         {
             this.fileHeaderRepository = fileHeaderRepository;
 
-            Box = box;
+            this.box = box;
 
             Receive<FilePartMessage>(message => Handle(message));
         }
@@ -24,7 +24,7 @@ namespace AkkaTransfer.Actors
             System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");
             var id = this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
 
-            var props = Props.Create(() => new FileRebuilderActor(Box, this.fileHeaderRepository));
+            var props = Props.Create(() => new FileRebuilderActor(this.box, this.fileHeaderRepository));
             var transactionActor = Context.ActorOf(props, "file-rebuilder-actor");
 
             if (id == -1)
