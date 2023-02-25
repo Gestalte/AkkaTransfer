@@ -1,12 +1,6 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Data;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace AkkaTransfer.Actors
 {
@@ -29,13 +23,11 @@ namespace AkkaTransfer.Actors
             {
                 var header = this.fileHeaderRepository.GetFileHeaderById(id);
 
-                var headerPieces = header.FilePieces
+                var headerPieces = header!.FilePieces
                     .AsParallel()
                     .AsOrdered()
                     .Select(s => s.Content)
                     .Aggregate((a, b) => a + b);
-
-                // TODO: Use router for receive.
 
                 byte[] newBytes = Convert.FromBase64String(headerPieces);
 
