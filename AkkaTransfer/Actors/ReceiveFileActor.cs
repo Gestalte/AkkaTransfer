@@ -24,8 +24,6 @@ namespace AkkaTransfer.Actors {
             Console.WriteLine($"Receive part {message.Position} of {message.Count}");
             var id = this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
 
-            //var props = Props.Create(() => new FileRebuilderActor(this.box, this.fileHeaderRepository));
-            //var transactionActor = Context.ActorOf(props, "file-rebuilder-actor");
             var transactionActor = Context.ActorSelection("user/file-rebuilder-actor");
 
             if (id == -1)

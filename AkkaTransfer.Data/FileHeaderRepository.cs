@@ -2,14 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
-namespace AkkaTransfer.Data {
+namespace AkkaTransfer.Data
+{
     public class FileHeaderRepository : IFileHeaderRepository
     {
         private readonly ReceiveDbContext context;
 
         public FileHeaderRepository(ReceiveDbContext context)
         {
-
             this.context = context;
         }
 
@@ -18,7 +18,7 @@ namespace AkkaTransfer.Data {
             return this.context.FileHeaders
                 .AsNoTracking()
                 .Where(s => s.FileHeaderId == Id)
-                .Include(i => i.FilePieces)
+                .Include(i => i.FilePieces.OrderBy(o => o.Position))
                 .FirstOrDefault();
         }
 

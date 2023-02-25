@@ -2,6 +2,7 @@
 using AkkaTransfer.Data;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,16 +30,12 @@ namespace AkkaTransfer.Actors
                 var header = this.fileHeaderRepository.GetFileHeaderById(id);
 
                 var headerPieces = header.FilePieces
-                    //.AsParallel()
-                    //.AsOrdered()
-                    .OrderBy(s => s.Position)
+                    .AsParallel()
+                    .AsOrdered()
                     .Select(s => s.Content)
                     .Aggregate((a, b) => a + b);
 
-                // TODO: Figure out AsParallel
                 // TODO: Use router for receive.
-
-                Console.WriteLine(headerPieces);
 
                 byte[] newBytes = Convert.FromBase64String(headerPieces);
 
@@ -47,6 +44,8 @@ namespace AkkaTransfer.Actors
                 this.fileHeaderRepository.DeleteFileHeader(id);
 
                 Console.WriteLine("File fully received: " + header.FileName);
+
+                Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.
             }
             else
             {

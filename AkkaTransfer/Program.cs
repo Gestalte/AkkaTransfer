@@ -1,4 +1,6 @@
 ﻿using Akka.Actor;
+using Akka.Configuration;
+using Akka.Routing;
 using Akka.Util.Internal;
 using AkkaTransfer;
 using AkkaTransfer.Actors;
@@ -18,22 +20,24 @@ IFileHeaderRepository repo = new  FileHeaderRepository(dbContext);
 
 // Setup Actors.
 
-var hocon = HoconLoader.FromFile("akka.net.hocon");
-ActorSystem system = ActorSystem.Create("file-transfer-system", hocon);
-
 FileBox fileSendBox = new("SendBox");
 FileBox fileReceiveBox = new("ReceiveBox");
 
-Props sendProps = Props.Create(typeof(SendFileActor), fileSendBox);
-Props receiveProps = Props.Create(typeof(ReceiveFileActor), fileReceiveBox, repo);
-Props rebuilderProps =Props.Create(typeof(FileRebuilderActor), fileSendBox, repo);
+Config hocon = HoconLoader.FromFile("akka.net.hocon");
+ActorSystem system = ActorSystem.Create("file-transfer-system", hocon);
 
+Props sendProps = Props.Create(typeof(SendFileActor), fileSendBox);
 IActorRef sendFileActor = system.ActorOf(sendProps, "send-file-actor");
 
-_ = system.ActorOf(receiveProps, "receive-file-actor");
+Props rebuilderProps =Props.Create(typeof(FileRebuilderActor), fileSendBox, repo);
 _ = system.ActorOf(rebuilderProps, "file-rebuilder-actor");
 
+Props receiveGatewayProps = Props.Create(typeof(ReceiveFileActor), fileReceiveBox, repo)
+    .WithRouter(new SmallestMailboxPool(5, new DefaultResizer(5, 1000), SupervisorStrategy.DefaultStrategy, "default-dispatcher "));
+IActorRef receiveGateway = system.ActorOf(receiveGatewayProps, "receive-file-actor");
+
 // Send files.
+
 fileSendBox.GetFilesInBox()
     .Select(filePath => Path.GetFileName(filePath))
     .ForEach(fileName =>
