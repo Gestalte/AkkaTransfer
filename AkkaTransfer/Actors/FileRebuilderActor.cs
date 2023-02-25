@@ -29,12 +29,14 @@ namespace AkkaTransfer.Actors
                 var header = this.fileHeaderRepository.GetFileHeaderById(id);
 
                 var headerPieces = header.FilePieces
-                    .AsParallel()
-                    .AsOrdered()
+                    //.AsParallel()
+                    //.AsOrdered()
                     .OrderBy(s => s.Position)
                     .Select(s => s.Content)
-                    .SelectMany(s => s)
-                    .ToString();
+                    .Aggregate((a, b) => a + b);
+
+                // TODO: Figure out AsParallel
+                // TODO: Use router for receive.
 
                 Console.WriteLine(headerPieces);
 
