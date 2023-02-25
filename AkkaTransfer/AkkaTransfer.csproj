@@ -9,10 +9,14 @@
 
   <ItemGroup>
     <None Remove="akka.net.hocon" />
+    <None Remove="hocon.send" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="akka.net.hocon">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="hocon.send">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
