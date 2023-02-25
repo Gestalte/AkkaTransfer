@@ -7,10 +7,9 @@
             BoxPath = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), boxName)).FullName;
         }
 
-        public string BoxPath { get; set; }
+        public string BoxPath { get; private set; }
 
         public List<string> GetFilesInBox()
             => Directory.GetFiles(BoxPath).ToList();
-
     }
 }
