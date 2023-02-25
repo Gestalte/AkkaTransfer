@@ -33,7 +33,7 @@ namespace AkkaTransfer.Actors
 
                 for (int i = 0; i < batchCount; i++)
                 {
-                    var newString = hasRest && i == batchCount
+                    var newString = hasRest && i == batchCount - 1
                         ? base64.Substring(i * batchSize, rest)
                         : base64.Substring(i * batchSize, batchSize);
 
