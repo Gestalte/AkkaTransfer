@@ -1,10 +1,10 @@
 ﻿namespace AkkaTransfer.Data
 {
-    public class FilePiece
+    public class SendFilePiece
     {
-        public int FilePieceId { get; set; }
+        public int SendFilePieceId { get; set; }
         public string Content { get; set; }
         public int Position { get; set; }
-        public int FileHeaderId { get; set; }
+        public int SendFileHeaderId { get; set; }
     }
 }

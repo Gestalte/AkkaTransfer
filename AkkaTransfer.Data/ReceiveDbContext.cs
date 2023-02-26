@@ -9,7 +9,11 @@ namespace AkkaTransfer.Data
             optionsBuilder.UseSqlite("Data Source=receive.db");
         }
 
-        public DbSet<FileHeader> FileHeaders { get; set; }
-        public DbSet<FilePiece> FilePieces { get; set; }
+        public DbSet<ReceiveFileHeader> ReceiveFileHeaders { get; set; }
+        public DbSet<ReceiveFilePiece> ReceiveFilePieces { get; set; }
+        public DbSet<SendFileHeader> SendFileHeaders { get; set; }
+        public DbSet<SendFilePiece> SendFilePieces { get; set; }
+        public DbSet<Manifest> Manifests { get; set; }
+        public DbSet<ManifestFile> ManifestFiles { get; set; }
     }
 }

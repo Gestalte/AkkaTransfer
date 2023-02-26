@@ -1,11 +1,11 @@
 ﻿using AkkaTransfer.Common;
 
 namespace AkkaTransfer.Data {
-    public interface IFileHeaderRepository
+    public interface IReceiveFileHeaderRepository
     {
         int AddNewPieceUnitOfWork(FilePartMessage filePartMessage);
 #nullable enable
-        FileHeader? GetFileHeaderById(int Id);
+        ReceiveFileHeader? GetFileHeaderById(int Id);
 #nullable disable
         void DeleteFileHeader(int Id);
         bool HasEntireFileBeenReceived(int fileHeaderId);
