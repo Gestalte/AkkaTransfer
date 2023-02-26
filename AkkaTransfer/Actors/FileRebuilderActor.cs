@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.Util.Internal;
 using AkkaTransfer.Data;
 using System.Diagnostics;
 
@@ -6,10 +7,12 @@ namespace AkkaTransfer.Actors
 {
     public class FileRebuilderActor : ReceiveActor
     {
-        private readonly IFileHeaderRepository fileHeaderRepository;
+        private readonly IReceiveFileHeaderRepository fileHeaderRepository;
         private readonly FileBox receiveBox;
 
-        public FileRebuilderActor(FileBox receiveBox, IFileHeaderRepository fileHeaderRepository)
+        
+
+        public FileRebuilderActor(FileBox receiveBox, IReceiveFileHeaderRepository fileHeaderRepository)
         {
             this.fileHeaderRepository = fileHeaderRepository;
             this.receiveBox = receiveBox;
@@ -23,7 +26,7 @@ namespace AkkaTransfer.Actors
             {
                 var header = this.fileHeaderRepository.GetFileHeaderById(id);
 
-                var headerPieces = header!.FilePieces
+                var headerPieces = header!.ReceiveFilePieces
                     .AsParallel()
                     .AsOrdered()
                     .Select(s => s.Content)
@@ -37,7 +40,7 @@ namespace AkkaTransfer.Actors
 
                 Console.WriteLine("File fully received: " + header.FileName);
 
-                Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.
+                Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.                
             }
             else
             {
@@ -45,6 +48,38 @@ namespace AkkaTransfer.Actors
 
                 await WriteFileIfComplete(id);
             }
+        }
+    }
+
+    sealed class EmptyMessage { }
+
+    sealed class FileReceiveTimeoutActor : ReceiveActor
+    {
+        private Dictionary<int, DateTime> fileTimes = new();
+
+        public FileReceiveTimeoutActor()
+        {
+            var scheduler = Context.System.Scheduler;
+
+            scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
+
+            Receive<EmptyMessage>(msg =>
+            {
+                // If ten seconds have passed without receiving any file parts,
+                // request that they be sent again.
+                fileTimes
+                .Where(w => DateTime.UtcNow - w.Value > TimeSpan.FromSeconds(10.0))
+                .ForEach(f =>
+                {
+                    // TODO: Request missing pieces.
+                    // TODO: What to do about missing files (Entire file is missing)
+                });
+            });
+
+            Receive<int>(id =>
+            {
+                fileTimes.Add(id, DateTime.UtcNow);
+            });
         }
     }
 }
