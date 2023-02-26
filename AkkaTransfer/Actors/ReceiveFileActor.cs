@@ -5,11 +5,11 @@ using AkkaTransfer.Data;
 namespace AkkaTransfer.Actors {
     public class ReceiveFileActor : ReceiveActor
     {
-        private readonly IFileHeaderRepository fileHeaderRepository;
+        private readonly IReceiveFileHeaderRepository fileHeaderRepository;
 
         public readonly FileBox box;
 
-        public ReceiveFileActor(FileBox box, IFileHeaderRepository fileHeaderRepository)
+        public ReceiveFileActor(FileBox box, IReceiveFileHeaderRepository fileHeaderRepository)
         {
             this.fileHeaderRepository = fileHeaderRepository;
 

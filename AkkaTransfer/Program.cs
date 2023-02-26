@@ -16,7 +16,7 @@ if (dbContext.Database.GetPendingMigrations().ToList().Count != 0)
     dbContext.Database.Migrate();
 }
 
-IFileHeaderRepository repo = new  FileHeaderRepository(dbContext);
+IReceiveFileHeaderRepository repo = new ReceiveFileHeaderRepository(dbContext);
 
 // Setup Actors.
 
@@ -29,11 +29,11 @@ ActorSystem system = ActorSystem.Create("file-transfer-system", hocon);
 Props sendProps = Props.Create(typeof(SendFileActor), fileSendBox);
 IActorRef sendFileActor = system.ActorOf(sendProps, "send-file-actor");
 
-Props rebuilderProps =Props.Create(typeof(FileRebuilderActor), fileSendBox, repo);
+Props rebuilderProps = Props.Create(typeof(FileRebuilderActor), fileSendBox, repo);
 _ = system.ActorOf(rebuilderProps, "file-rebuilder-actor");
 
 Props receiveGatewayProps = Props.Create(typeof(ReceiveFileActor), fileReceiveBox, repo)
-    .WithRouter(new SmallestMailboxPool(5, new DefaultResizer(5, 1000), SupervisorStrategy.DefaultStrategy, "default-dispatcher "));
+    .WithRouter(new SmallestMailboxPool(5, new DefaultResizer(5, 1000), SupervisorStrategy.DefaultStrategy, "default-dispatcher"));
 IActorRef receiveGateway = system.ActorOf(receiveGatewayProps, "receive-file-actor");
 
 // Send files.
