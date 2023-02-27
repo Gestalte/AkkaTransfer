@@ -1,66 +1,29 @@
-﻿using System.Security.Cryptography;
+﻿using Akka.Actor;
+using System.Security.Cryptography;
 using System.Text;
 
-namespace AkkaTransfer.Common
+namespace AkkaTransfer
 {
-    sealed class Manifest
+    internal sealed record Manifest(DateTime Timesstamp, HashSet<ManifestFile> Files);
+    internal sealed record ManifestFile(string Filename, string FileHash);
+
+    internal class ManifestHelper
     {
-        public Manifest(FileBox fileBox)
-        {
-            var files = Directory.GetFiles(fileBox.BoxPath);
+        private readonly FileBox fileBox;
 
-            Timestamp = DateTime.Now;
-            Files = files?.Select(s => new ManifestFile(s)).ToArray();
+        public ManifestHelper(FileBox fileBox)
+        {
+            this.fileBox = fileBox;
         }
 
-        public Manifest(ManifestFile[]? files)
+        public Manifest Difference(Manifest oldManifest, Manifest newManifest)
         {
-            Timestamp = DateTime.Now;
-            Files = files;
+            var fileDifference = oldManifest.Files.Except(newManifest.Files).ToHashSet();
+
+            return new Manifest(DateTime.Now, fileDifference);
         }
 
-        public DateTime Timestamp { get; private set; }
-        public ManifestFile[]? Files { get; private set; }
-
-        /// <summary>
-        /// Returns only the files present in the newer Manifest that are not 
-        /// present in the older Manifest.
-        /// </summary>
-        /// <param name="newerManifest"></param>
-        /// <param name="olderManifest"></param>
-        /// <returns>New Manifest</returns>
-        public static Manifest SubtractManifestFiles(Manifest newerManifest, Manifest olderManifest)
-        {
-            if (olderManifest.Files == null && newerManifest.Files != null)
-            {
-                return new Manifest(newerManifest.Files);
-            }
-
-            // Select files that have hash codes that do not exist in the old
-            // Manifest. The idea is that if a file exists in both manifests,
-            // it should not be copied again.
-            var files = newerManifest?.Files?
-                .Where(s => olderManifest?.Files?
-                    .Select(s => s.FileHash)
-                    .Contains(s.FileHash) ?? false == false)
-                .ToArray();
-
-            return new Manifest(files);
-        }
-    }
-
-    sealed class ManifestFile
-    {
-        public ManifestFile(string filepath)
-        {
-            Filename = Path.GetFileName(filepath);
-            FileHash = CalculateMD5Hash(filepath);
-        }
-
-        public string Filename { get; private set; }
-        public string FileHash { get; private set; }
-
-        private static string CalculateMD5Hash(string filepath)
+        private string CalculateMD5Hash(string filepath)
         {
             using var md5 = MD5.Create();
             using var stream = File.OpenRead(filepath);
@@ -68,16 +31,90 @@ namespace AkkaTransfer.Common
             return Encoding.Default.GetString(md5.ComputeHash(stream));
         }
 
-        public override bool Equals(object? obj)
+        private Manifest LoadManifestFromDB()
         {
-            return obj is ManifestFile file &&
-                   Filename == file.Filename &&
-                   FileHash == file.FileHash;
+            throw new NotImplementedException();
         }
 
-        public override int GetHashCode()
+        private void WriteManifestToDB(Manifest directoryManifest)
         {
-            return HashCode.Combine(Filename, FileHash);
+            throw new NotImplementedException();
+        }
+
+        private Manifest MapManifestFromDirectory(string directory)
+        {
+            var filepaths = Directory.GetFiles(directory);
+
+            HashSet<ManifestFile> files = filepaths
+                .Select(path => new ManifestFile(Path.GetFileName(path), CalculateMD5Hash(path)))
+                .ToHashSet();
+
+            return new Manifest(DateTime.Now, files);
+        }
+
+        public Manifest CreateManifest()
+        {
+            Manifest dbManifest = LoadManifestFromDB();
+            Manifest directoryManifest = MapManifestFromDirectory(this.fileBox.BoxPath);
+
+            if (dbManifest == directoryManifest)
+            {
+                return dbManifest;
+            }
+
+            WriteManifestToDB(directoryManifest);
+
+            return directoryManifest;
+        }
+    }
+
+    public sealed class ManifestRequest { }
+
+    internal sealed class ManifestActor : ReceiveActor
+    {
+        private const string ManifestActorName = "manifest-actor";
+        private const string SendActorName = "send-actor";
+
+        private readonly string foreignAddress;
+        private readonly ManifestHelper senderManifestHelper;
+        private readonly ManifestHelper receiverManifestHelper;
+
+        public ManifestActor(string ipAndPort, ManifestHelper senderManifestHelper, ManifestHelper receiverManifestHelper)
+        {
+            this.senderManifestHelper = senderManifestHelper;
+            this.receiverManifestHelper = receiverManifestHelper;
+            this.foreignAddress = $"akka.tcp://file-transfer-system@{ipAndPort}/user/";
+
+            Receive<ManifestRequest>(SendManifest);
+        }
+
+        public void ReceiveManifest(Manifest manifest)
+        {
+            Manifest oldManifest = this.receiverManifestHelper.CreateManifest();
+
+            Manifest difference = this.receiverManifestHelper.Difference(oldManifest, manifest);
+
+            var sendActor = Context.ActorSelection(foreignAddress + SendActorName);
+
+            sendActor.Tell(difference);
+        }
+
+        public void SendManifest(ManifestRequest _)
+        {
+            Manifest newManifest = this.senderManifestHelper.CreateManifest();
+
+            var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
+
+            manifestActor.Tell(newManifest);
+        }
+
+        public async Task RequestManifestAsync()
+        {
+            var manifestActor = Context.ActorSelection(foreignAddress+ManifestActorName);
+
+            var receivedManifest = await manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5));
+
+            ReceiveManifest(receivedManifest);
         }
     }
 }
