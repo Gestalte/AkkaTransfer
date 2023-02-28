@@ -10,9 +10,9 @@ namespace AkkaTransfer
             return ConfigurationFactory.ParseString(hoconContent);
         }
 
-        public static string ReadSendIpAndPort(string path)
+        public static string ReadSendIpAndPort(string filename)
         {
-            return System.IO.File.ReadAllText(path);
+            return System.IO.File.ReadAllText(filename);
         }
     }
 }
