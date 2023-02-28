@@ -1,4 +1,4 @@
-﻿using Akka.Actor;
+﻿using Akka.Util.Internal;
 using AkkaTransfer.Common;
 using AkkaTransfer.Data.Manifest;
 using System.Security.Cryptography;
@@ -67,55 +67,12 @@ namespace AkkaTransfer
 
             return directoryManifest;
         }
-    }
 
-    public sealed class ManifestRequest { }
-
-    internal sealed class ManifestActor : ReceiveActor
-    {
-        private const string ManifestActorName = "manifest-actor";
-        private const string SendActorName = "send-actor";
-
-        private readonly string foreignAddress;
-        private readonly ManifestHelper senderManifestHelper;
-        private readonly ManifestHelper receiverManifestHelper;
-
-        public ManifestActor(string ipAndPort, ManifestHelper senderManifestHelper, ManifestHelper receiverManifestHelper)
+        public static void PrintManifest(Manifest manifest)
         {
-            this.senderManifestHelper = senderManifestHelper;
-            this.receiverManifestHelper = receiverManifestHelper;
-            this.foreignAddress = $"akka.tcp://file-transfer-system@{ipAndPort}/user/";
-
-            Receive<ManifestRequest>(SendManifest);
-        }
-
-        public void ReceiveManifest(Manifest manifest)
-        {
-            Manifest oldManifest = this.receiverManifestHelper.CreateManifest();
-
-            Manifest difference = this.receiverManifestHelper.Difference(oldManifest, manifest);
-
-            var sendActor = Context.ActorSelection(foreignAddress + SendActorName);
-
-            sendActor.Tell(difference);
-        }
-
-        public void SendManifest(ManifestRequest _)
-        {
-            Manifest newManifest = this.senderManifestHelper.CreateManifest();
-
-            var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
-
-            manifestActor.Tell(newManifest);
-        }
-
-        public async Task RequestManifestAsync()
-        {
-            var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
-
-            var receivedManifest = await manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5));
-
-            ReceiveManifest(receivedManifest);
+            Console.WriteLine("Manifest creation:" + manifest.Timesstamp);
+            Console.WriteLine("Manifest content:");
+            manifest.Files.ForEach(f => Console.WriteLine($"\t{f.Filename}\t{f.FileHash}"));
         }
     }
 }
