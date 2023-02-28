@@ -1,6 +1,7 @@
 ﻿using AkkaTransfer.Common;
 
-namespace AkkaTransfer.Data {
+namespace AkkaTransfer.Data.ReceiveFile
+{
     public interface IReceiveFileHeaderRepository
     {
         int AddNewPieceUnitOfWork(FilePartMessage filePartMessage);

@@ -1,6 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Util.Internal;
-using AkkaTransfer.Data;
+using AkkaTransfer.Data.ReceiveFile;
 using System.Diagnostics;
 
 namespace AkkaTransfer.Actors

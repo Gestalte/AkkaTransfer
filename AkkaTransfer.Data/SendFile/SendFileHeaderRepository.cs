@@ -1,7 +1,7 @@
 ﻿using AkkaTransfer.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace AkkaTransfer.Data
+namespace AkkaTransfer.Data.SendFile
 {
     sealed class SendFileHeaderRepository : ISendFileHeaderRepository
     {
@@ -15,7 +15,7 @@ namespace AkkaTransfer.Data
 #nullable enable
         public SendFileHeader? GetFileHeaderByFilename(string filename)
         {
-            return this.context.SendFileHeaders
+            return context.SendFileHeaders
                 .AsNoTracking()
                 .Where(s => s.FileName == filename)
                 .Include(i => i.SendFilePieces)
@@ -25,7 +25,7 @@ namespace AkkaTransfer.Data
 
         public SendFilePiece[] GetFilePiecesByFilenameAndPosition(string filename, int[] positions)
         {
-            var header = this.context.SendFileHeaders
+            var header = context.SendFileHeaders
                 .AsNoTracking()
                 .Where(s => s.FileName == filename)
                 .Include(i => i.SendFilePieces.Where(w => positions.Contains(w.Position)))
@@ -36,7 +36,7 @@ namespace AkkaTransfer.Data
 
         public void AddFileHeaderAndPieces(FilePartMessage filePartMessage)
         {
-            var header = this.context.SendFileHeaders
+            var header = context.SendFileHeaders
                 .Where(s => s.FileName == filePartMessage.Filename)
                 .Include(i => i.SendFilePieces)
                 .FirstOrDefault();
@@ -51,7 +51,7 @@ namespace AkkaTransfer.Data
             }
             else
             {
-                this.context.SendFileHeaders.Add(new SendFileHeader
+                context.SendFileHeaders.Add(new SendFileHeader
                 {
                     FileName = filePartMessage.Filename,
                     PieceCount = filePartMessage.Count,
@@ -66,15 +66,15 @@ namespace AkkaTransfer.Data
                 });
             }
 
-            this.context.SaveChanges();
+            context.SaveChanges();
         }
 
         public void DeleteAll()
         {
-            this.context.SendFilePieces.ToList().Clear();
-            this.context.SendFileHeaders.ToList().Clear();
+            context.SendFilePieces.ToList().Clear();
+            context.SendFileHeaders.ToList().Clear();
 
-            this.context.SaveChanges();
+            context.SaveChanges();
         }
     }
 }

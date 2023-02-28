@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AkkaTransfer.Common;
+using AkkaTransfer.Data.Manifest;
+using AkkaTransfer.Data.ReceiveFile;
+using AkkaTransfer.Data.SendFile;
+using Microsoft.EntityFrameworkCore;
 
 namespace AkkaTransfer.Data
 {
@@ -13,7 +17,9 @@ namespace AkkaTransfer.Data
         public DbSet<ReceiveFilePiece> ReceiveFilePieces { get; set; }
         public DbSet<SendFileHeader> SendFileHeaders { get; set; }
         public DbSet<SendFilePiece> SendFilePieces { get; set; }
-        public DbSet<Manifest> Manifests { get; set; }
-        public DbSet<ManifestFile> ManifestFiles { get; set; }
+        public DbSet<SendManifest> SendManifests { get; set; }
+        public DbSet<SendManifestFile> SendManifestFiles { get; set; }
+        public DbSet<ReceiveManifest> ReceiveManifests { get; set; }
+        public DbSet<ReceiveManifestFile> ReceiveManifestFiles { get; set; }
     }
 }

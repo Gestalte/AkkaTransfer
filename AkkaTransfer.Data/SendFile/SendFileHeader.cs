@@ -1,4 +1,4 @@
-﻿namespace AkkaTransfer.Data
+﻿namespace AkkaTransfer.Data.SendFile
 {
     public class SendFileHeader
     {

@@ -5,6 +5,7 @@ using Akka.Util.Internal;
 using AkkaTransfer;
 using AkkaTransfer.Actors;
 using AkkaTransfer.Data;
+using AkkaTransfer.Data.ReceiveFile;
 using Microsoft.EntityFrameworkCore;
 
 // Setup ReceiveDb.

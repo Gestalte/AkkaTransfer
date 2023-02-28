@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
-namespace AkkaTransfer.Data
+namespace AkkaTransfer.Data.ReceiveFile
 {
     public class ReceiveFileHeaderRepository : IReceiveFileHeaderRepository
     {
@@ -16,7 +16,7 @@ namespace AkkaTransfer.Data
 #nullable enable
         public ReceiveFileHeader? GetFileHeaderById(int Id)
         {
-            return this.context.ReceiveFileHeaders
+            return context.ReceiveFileHeaders
                 .AsNoTracking()
                 .Where(s => s.ReceiveFileHeaderId == Id)
                 .Include(i => i.ReceiveFilePieces.OrderBy(o => o.Position))
@@ -26,7 +26,7 @@ namespace AkkaTransfer.Data
 
         public void DeleteFileHeader(int Id)
         {
-            var header = this.context.ReceiveFileHeaders
+            var header = context.ReceiveFileHeaders
                 .AsNoTracking()
                 .Where(s => s.ReceiveFileHeaderId == Id)
                 .Include(i => i.ReceiveFilePieces)
@@ -37,12 +37,12 @@ namespace AkkaTransfer.Data
             //    header.FilePieces.Remove(piece);
             //}
 
-            this.context.ReceiveFileHeaders.Remove(header);
+            context.ReceiveFileHeaders.Remove(header);
         }
 
         public bool HasEntireFileBeenReceived(int fileHeaderId)
         {
-            var header = this.context.ReceiveFileHeaders
+            var header = context.ReceiveFileHeaders
                 .AsNoTracking()
                 .Where(s => s.ReceiveFileHeaderId == fileHeaderId)
                 .Include(i => i.ReceiveFilePieces)
@@ -58,14 +58,14 @@ namespace AkkaTransfer.Data
 
         public int AddNewPieceUnitOfWork(FilePartMessage filePartMessage)
         {
-            var header = this.context.ReceiveFileHeaders
+            var header = context.ReceiveFileHeaders
                 .Where(s => s.FileName == filePartMessage.Filename)
                 .Include(i => i.ReceiveFilePieces)
                 .FirstOrDefault();
 
             if (header != null)
             {
-                var piece = this.context.ReceiveFilePieces
+                var piece = context.ReceiveFilePieces
                     .Where(w => w.Position == filePartMessage.Position && w.ReceiveFileHeaderId == header.ReceiveFileHeaderId)
                     .AsNoTracking()
                     .FirstOrDefault();
@@ -87,7 +87,7 @@ namespace AkkaTransfer.Data
             }
             else
             {
-                header = this.context.ReceiveFileHeaders.Add(new ReceiveFileHeader
+                header = context.ReceiveFileHeaders.Add(new ReceiveFileHeader
                 {
                     FileName = filePartMessage.Filename,
                     PieceCount = filePartMessage.Count,
@@ -102,7 +102,7 @@ namespace AkkaTransfer.Data
                 }).Entity;
             }
 
-            this.context.SaveChanges();
+            context.SaveChanges();
 
             return header.ReceiveFileHeaderId;
         }

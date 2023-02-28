@@ -1,19 +1,20 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Common;
+using AkkaTransfer.Data.Manifest;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace AkkaTransfer
 {
-    internal sealed record Manifest(DateTime Timesstamp, HashSet<ManifestFile> Files);
-    internal sealed record ManifestFile(string Filename, string FileHash);
-
     internal class ManifestHelper
     {
         private readonly FileBox fileBox;
+        private readonly IManifestRepository manifestRepository;
 
-        public ManifestHelper(FileBox fileBox)
+        public ManifestHelper(FileBox fileBox, IManifestRepository manifestRepository)
         {
             this.fileBox = fileBox;
+            this.manifestRepository = manifestRepository;
         }
 
         public Manifest Difference(Manifest oldManifest, Manifest newManifest)
@@ -33,12 +34,12 @@ namespace AkkaTransfer
 
         private Manifest LoadManifestFromDB()
         {
-            throw new NotImplementedException();
+            return this.manifestRepository.LoadNewestManifest();
         }
 
         private void WriteManifestToDB(Manifest directoryManifest)
         {
-            throw new NotImplementedException();
+            this.manifestRepository.Save(directoryManifest);
         }
 
         private Manifest MapManifestFromDirectory(string directory)
@@ -110,7 +111,7 @@ namespace AkkaTransfer
 
         public async Task RequestManifestAsync()
         {
-            var manifestActor = Context.ActorSelection(foreignAddress+ManifestActorName);
+            var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
 
             var receivedManifest = await manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5));
 

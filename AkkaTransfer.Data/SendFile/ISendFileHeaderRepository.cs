@@ -1,6 +1,6 @@
 ﻿using AkkaTransfer.Common;
 
-namespace AkkaTransfer.Data
+namespace AkkaTransfer.Data.SendFile
 {
     internal interface ISendFileHeaderRepository
     {
