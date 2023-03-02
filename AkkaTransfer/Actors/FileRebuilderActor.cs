@@ -62,14 +62,14 @@ namespace AkkaTransfer.Actors
 
     internal sealed class FileReceiveTimeoutActor : ReceiveActor
     {
-        private readonly ReceiveManifestRepository receiveManifestRepository;
-        private readonly ReceiveFileHeaderRepository receiveFileHeaderRepository;
+        private readonly IManifestRepository receiveManifestRepository;
+        private readonly IReceiveFileHeaderRepository receiveFileHeaderRepository;
 
         private DateTime LastReceivedTimestamp = DateTime.UtcNow;
 
         public FileReceiveTimeoutActor
-            (ReceiveManifestRepository receiveManifestRepository
-            , ReceiveFileHeaderRepository receiveFileHeaderRepository
+            (IManifestRepository receiveManifestRepository
+            , IReceiveFileHeaderRepository receiveFileHeaderRepository
             )
         {
             this.receiveManifestRepository = receiveManifestRepository;
