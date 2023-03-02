@@ -16,13 +16,14 @@ namespace AkkaTransfer.Actors
 
             this.box = box;
 
-            Receive<FilePartMessage>(message => Handle(message));
+            Receive<FilePartMessage>(Handle);
         }
 
         private void Handle(FilePartMessage message)
         {
             System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");
             Console.WriteLine($"Receive part {message.Position} of {message.Count}");
+
             var id = this.fileHeaderRepository.AddNewPieceUnitOfWork(message);
 
             var transactionActor = Context.ActorSelection("user/file-rebuilder-actor");
