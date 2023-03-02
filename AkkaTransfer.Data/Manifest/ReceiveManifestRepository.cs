@@ -20,6 +20,7 @@ namespace AkkaTransfer.Data.Manifest
         {
             ReceiveManifest? dbManifest = this.context.ReceiveManifests
                 .AsNoTracking()
+                .Include(i=>i.ReceiveManifestFiles)
                 .OrderBy(o => o.Timestamp)
                 .FirstOrDefault();
 
