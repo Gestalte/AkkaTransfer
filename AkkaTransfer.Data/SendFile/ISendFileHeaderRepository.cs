@@ -2,7 +2,7 @@
 
 namespace AkkaTransfer.Data.SendFile
 {
-    internal interface ISendFileHeaderRepository
+    public interface ISendFileHeaderRepository
     {
         void AddFileHeaderAndPieces(FilePartMessage filePartMessage);
         void DeleteAll();
