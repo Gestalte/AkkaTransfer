@@ -8,17 +8,25 @@ namespace AkkaTransfer.Actors
     {
         private readonly IReceiveFileHeaderRepository fileHeaderRepository;
         private readonly FileBox receiveBox;
+        ActorSelection timeoutActor;
 
         public FileRebuilderActor(FileBox receiveBox, IReceiveFileHeaderRepository fileHeaderRepository)
         {
             this.fileHeaderRepository = fileHeaderRepository;
             this.receiveBox = receiveBox;
 
+            string ipAndPort = HoconLoader.ReadSendIpAndPort("hocon.send");
+            string address = $"akka.tcp://file-transfer-system@{ipAndPort}/user/file-receive-timeout-actor";
+
+            this.timeoutActor = Context.ActorSelection(address);
+
             Receive<int>(async id => await WriteFileIfComplete(id));
         }
 
         public async Task WriteFileIfComplete(int id)
         {
+            this.timeoutActor.Tell(id);
+
             if (this.fileHeaderRepository.HasEntireFileBeenReceived(id))
             {
                 var header = this.fileHeaderRepository.GetFileHeaderById(id);
@@ -37,7 +45,9 @@ namespace AkkaTransfer.Actors
 
                 Console.WriteLine("File fully received: " + header.FileName);
 
-                //Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.                
+                var transactionActor = Context.ActorSelection("user/file-receive-timeout-actor");
+
+
             }
             else
             {
