@@ -15,7 +15,7 @@ namespace AkkaTransfer.Data.Manifest
         {
             this.context = context;
         }
-
+#nullable enable
         public Common.Manifest LoadNewestManifest()
         {
             SendManifest? dbManifest = this.context.SendManifests
@@ -34,6 +34,7 @@ namespace AkkaTransfer.Data.Manifest
 
             return new Common.Manifest(dbManifest.Timestamp, files);
         }
+#nullable disable
 
         public void Save(Common.Manifest manifest)
         {
