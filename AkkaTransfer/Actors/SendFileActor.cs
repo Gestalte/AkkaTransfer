@@ -1,17 +1,22 @@
 ﻿using Akka.Actor;
 using Akka.Routing;
 using AkkaTransfer.Common;
+using AkkaTransfer.Data.SendFile;
 
 namespace AkkaTransfer.Actors
 {
     public class SendFileCoordinator : ReceiveActor
     {
-        public SendFileCoordinator(FileBox sendFilebox)
+        private readonly ISendFileHeaderRepository sendFileHeaderRepository;
+
+        public SendFileCoordinator(FileBox sendFilebox, ISendFileHeaderRepository sendFileHeaderRepository)
         {
-            var props = Props.Create(() => new SendFileActor(sendFilebox))
+            this.sendFileHeaderRepository = sendFileHeaderRepository;
+
+            var sendProps = Props.Create(() => new SendFileActor(sendFilebox, this.sendFileHeaderRepository))
                 .WithRouter(new RoundRobinPool(5, new DefaultResizer(5, 100)));
 
-            var sendFileRouter = Context.ActorOf(props);
+            var sendFileRouter = Context.ActorOf(sendProps);
 
             Receive<Manifest>(manifest =>
             {
@@ -23,6 +28,11 @@ namespace AkkaTransfer.Actors
                     sendFileRouter.Tell(filename);
                 });
             });
+
+            Receive<List<(string, List<int>)>>(missingParts =>
+            {
+                missingParts.ForEach(s => sendFileRouter.Tell(s));
+            });
         }
     }
 
@@ -30,8 +40,12 @@ namespace AkkaTransfer.Actors
     {
         private const int batchSize = 125;
 
-        public SendFileActor(FileBox sendFilebox)
+        private readonly ISendFileHeaderRepository sendFileHeaderRepository;
+
+        public SendFileActor(FileBox sendFilebox, ISendFileHeaderRepository sendFileHeaderRepository)
         {
+            this.sendFileHeaderRepository = sendFileHeaderRepository;
+
             var props = Props
                 .Create<SendPartActor>()
                 .WithRouter(new RoundRobinPool(5, new DefaultResizer(5, 1000)));
@@ -40,13 +54,42 @@ namespace AkkaTransfer.Actors
 
             Receive<string>(filename =>
             {
-                var pathToSend = FileBox.FindFilePath(filename, sendFilebox);
+                var fileHeader = this.sendFileHeaderRepository.GetFileHeaderByFilename(filename);
 
-                var messages = SplitIntoMessages(pathToSend, filename);
+                List<FilePartMessage> messages;
+
+                if (fileHeader != null)
+                {
+                    messages = fileHeader.SendFilePieces
+                        .Select(s => new FilePartMessage(s.Content, s.Position, fileHeader.PieceCount, filename))
+                        .ToList();
+                }
+                else
+                {
+                    var pathToSend = FileBox.FindFilePath(filename, sendFilebox);
+                    messages = SplitIntoMessages(pathToSend!, filename).ToList();
+                }
 
                 foreach (var message in messages)
                 {
                     sendRouter.Tell(message);
+                }
+            });
+
+            Receive<(string, List<int>)>(missingPart =>
+            {
+                (string filename, List<int> missingPositions) = missingPart;
+
+                var fileHeader = this.sendFileHeaderRepository.GetFileHeaderByFilename(filename);
+
+                List<FilePartMessage> parts = fileHeader.SendFilePieces
+                    .Where(s => missingPositions.Contains(s.Position))
+                    .Select(s => new FilePartMessage(s.Content, s.Position, missingPositions.Count, filename))
+                    .ToList();
+
+                foreach (var part in parts)
+                {
+                    sendRouter.Tell(part);
                 }
             });
         }

@@ -1,7 +1,6 @@
 ﻿using Akka.Actor;
-using Akka.Util.Internal;
+using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
-using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
 {
@@ -9,8 +8,6 @@ namespace AkkaTransfer.Actors
     {
         private readonly IReceiveFileHeaderRepository fileHeaderRepository;
         private readonly FileBox receiveBox;
-
-        
 
         public FileRebuilderActor(FileBox receiveBox, IReceiveFileHeaderRepository fileHeaderRepository)
         {
@@ -40,7 +37,7 @@ namespace AkkaTransfer.Actors
 
                 Console.WriteLine("File fully received: " + header.FileName);
 
-                Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.                
+                //Process.Start(this.receiveBox.BoxPath); // Open ReceiveBox folder.                
             }
             else
             {
@@ -53,32 +50,48 @@ namespace AkkaTransfer.Actors
 
     sealed class EmptyMessage { }
 
-    sealed class FileReceiveTimeoutActor : ReceiveActor
+    internal sealed class FileReceiveTimeoutActor : ReceiveActor
     {
-        private Dictionary<int, DateTime> fileTimes = new();
+        private readonly ReceiveManifestRepository receiveManifestRepository;
+        private readonly ReceiveFileHeaderRepository receiveFileHeaderRepository;
 
-        public FileReceiveTimeoutActor()
+        private DateTime LastReceivedTimestamp = DateTime.UtcNow;
+
+        public FileReceiveTimeoutActor
+            (ReceiveManifestRepository receiveManifestRepository
+            , ReceiveFileHeaderRepository receiveFileHeaderRepository
+            )
         {
+            this.receiveManifestRepository = receiveManifestRepository;
+            this.receiveFileHeaderRepository = receiveFileHeaderRepository;
+
             var scheduler = Context.System.Scheduler;
 
             scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
 
             Receive<EmptyMessage>(msg =>
             {
-                // If ten seconds have passed without receiving any file parts,
-                // request that they be sent again.
-                fileTimes
-                .Where(w => DateTime.UtcNow - w.Value > TimeSpan.FromSeconds(10.0))
-                .ForEach(f =>
+                if (DateTime.UtcNow - LastReceivedTimestamp > TimeSpan.FromSeconds(10.0))
                 {
-                    // TODO: Request missing pieces.
-                    // TODO: What to do about missing files (Entire file is missing)
-                });
+                    Console.WriteLine("Receiving files timed out, requesting missing file pieces.");
+
+                    var manifest = this.receiveManifestRepository.LoadNewestManifest();
+
+                    var missingParts = this.receiveFileHeaderRepository.GetMissingPieces(manifest);
+
+                    // Move this setup to constructor.
+                    string ipAndPort = HoconLoader.ReadSendIpAndPort("hocon.send");
+                    string address = $"akka.tcp://file-transfer-system@{ipAndPort}/user/send-file-coordinator-actor";
+
+                    var sendActor = Context.ActorSelection(address);
+
+                    sendActor.Tell(missingParts);
+                }
             });
 
             Receive<int>(id =>
             {
-                fileTimes.Add(id, DateTime.UtcNow);
+                LastReceivedTimestamp = DateTime.UtcNow;
             });
         }
     }

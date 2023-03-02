@@ -1,7 +1,8 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Common;
 
-namespace AkkaTransfer.Actors {
+namespace AkkaTransfer.Actors
+{
     public class SendPartActor : ReceiveActor
     {
         public SendPartActor()
