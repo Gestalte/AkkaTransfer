@@ -53,7 +53,7 @@ namespace AkkaTransfer
             return new Manifest(DateTime.Now, files);
         }
 
-        public Manifest CreateManifest()
+        public Manifest ReadManifest()
         {
             Manifest dbManifest = LoadManifestFromDB();
             Manifest directoryManifest = MapManifestFromDirectory(this.fileBox.BoxPath);
