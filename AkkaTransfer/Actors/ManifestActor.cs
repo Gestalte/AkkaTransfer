@@ -21,7 +21,7 @@ namespace AkkaTransfer.Actors
             this.foreignAddress = $"akka.tcp://file-transfer-system@{ipAndPort}/user/";
 
             Receive<ManifestRequest>(SendManifest);
-            Receive<SendManifestRequest>(async r => await RequestManifest(r));
+            Receive<SendManifestRequest>(RequestManifest);
         }
 
         // File sending actor
@@ -33,14 +33,14 @@ namespace AkkaTransfer.Actors
         }
 
         // File receiving actor
-        public async Task RequestManifest(SendManifestRequest _)
+        public void RequestManifest(SendManifestRequest _)
         {
             // Request manifest
             var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
 
-            var receivedManifest = await manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5));
+            var receivedManifest = manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5)).Result;
 
-            await Console.Out.WriteLineAsync("Received Manifest:");
+            Console.Out.WriteLine("Received Manifest:");
             ManifestHelper.PrintManifest(receivedManifest);
 
             // Calculate which files to ask for.
@@ -48,8 +48,8 @@ namespace AkkaTransfer.Actors
 
             Manifest difference = this.receiverManifestHelper.Difference(oldManifest, receivedManifest);
 
-            await Console.Out.WriteLineAsync();
-            await Console.Out.WriteLineAsync("Local files differ by:");
+            Console.Out.WriteLine();
+            Console.Out.WriteLine("Local files differ by:");
             ManifestHelper.PrintManifest(difference);
 
             // Ask for files.
