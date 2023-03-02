@@ -55,6 +55,7 @@ namespace AkkaTransfer
                     break;
                 case "r":
                     manifestActor.Tell(new SendManifestRequest());
+                    Console.ReadLine();
                     break;                    
                 default:
                     Console.WriteLine("Command not recognised.");
