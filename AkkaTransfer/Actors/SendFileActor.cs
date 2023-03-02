@@ -1,10 +1,31 @@
 ﻿using Akka.Actor;
 using Akka.Routing;
 using AkkaTransfer.Common;
-using System.Runtime.InteropServices;
 
 namespace AkkaTransfer.Actors
 {
+    public class SendFileCoordinator : ReceiveActor
+    {
+        public SendFileCoordinator(FileBox sendFilebox)
+        {
+            var props = Props.Create(() => new SendFileActor(sendFilebox))
+                .WithRouter(new RoundRobinPool(5, new DefaultResizer(5, 100)));
+
+            var sendFileRouter = Context.ActorOf(props);
+
+            Receive<Manifest>(manifest =>
+            {
+                manifest.Files
+                .Select(s => s.Filename)
+                .ToList()
+                .ForEach(filename =>
+                {
+                    sendFileRouter.Tell(filename);
+                });
+            });
+        }
+    }
+
     public class SendFileActor : ReceiveActor
     {
         private const int batchSize = 125;
@@ -19,7 +40,7 @@ namespace AkkaTransfer.Actors
 
             Receive<string>(filename =>
             {
-                var pathToSend = FindFilePath(filename, sendFilebox);
+                var pathToSend = FileBox.FindFilePath(filename, sendFilebox);
 
                 var messages = SplitIntoMessages(pathToSend, filename);
 
@@ -55,14 +76,6 @@ namespace AkkaTransfer.Actors
             }
 
             return filePartMessages;
-        }
-
-        public static string FindFilePath(string filename, FileBox box)
-        {
-            return box.GetFilesInBox()
-                    .Where(s => Path.GetFileName(s) == filename)
-                    .FirstOrDefault()
-                    ?? throw new ArgumentException("File not found in SendBox", nameof(filename));
         }
     }
 }
