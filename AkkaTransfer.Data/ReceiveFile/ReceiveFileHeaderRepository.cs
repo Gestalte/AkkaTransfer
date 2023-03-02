@@ -106,5 +106,22 @@ namespace AkkaTransfer.Data.ReceiveFile
 
             return header.ReceiveFileHeaderId;
         }
+
+        public List<(string, List<int>)> GetMissingPieces(Common.Manifest manifest)
+        {
+            List<int> getMissing(int target, HashSet<int> have)
+                => Enumerable.Range(0, target)
+                    .ToHashSet()
+                    .Except(have)
+                    .ToList();
+
+            return this.context.ReceiveFileHeaders
+                .AsNoTracking()
+                .Include(i => i.ReceiveFilePieces)
+                .Where(w => manifest.Files.Select(s => s.Filename).Contains(w.FileName))
+                .ToList()
+                .Select(s => (s.FileName, getMissing(s.PieceCount, s.ReceiveFilePieces.Select(f => f.Position).ToHashSet())))
+                .ToList();
+        }
     }
 }
