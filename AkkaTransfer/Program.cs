@@ -3,6 +3,7 @@ using Akka.Configuration;
 using AkkaTransfer.Actors;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
+using AkkaTransfer.Data.ReceiveFile;
 using AkkaTransfer.Data.SendFile;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,7 @@ namespace AkkaTransfer
             IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(dbContext);
             IManifestRepository sendManifestRepo = new SendManifestRepository(dbContext);
             ISendFileHeaderRepository sendFileHeaderRepo = new SendFileHeaderRepository(dbContext);
+            IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(dbContext);
 
             FileBox fileSendBox = new("SendBox");
             FileBox fileReceiveBox = new("ReceiveBox");
@@ -36,7 +38,10 @@ namespace AkkaTransfer
             IActorRef manifestActor = system.ActorOf(manifestProps, "manifest-actor");
 
             Props sendProps = Props.Create(() => new SendFileCoordinator(fileSendBox, sendFileHeaderRepo));
-            IActorRef sendActor = system.ActorOf(manifestProps, "send-file-coordinator-actor");
+            IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
+
+            Props receiveProps = Props.Create(() => new ReceiveFileActor(fileReceiveBox, receiveFileHeaderRepo));
+            IActorRef receiveActor = system.ActorOf(receiveProps);
 
             RequestInput(manifestActor);
         }

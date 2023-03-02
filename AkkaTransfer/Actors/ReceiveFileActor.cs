@@ -4,6 +4,8 @@ using AkkaTransfer.Data.ReceiveFile;
 
 namespace AkkaTransfer.Actors
 {
+    // TODO: Make receive file coordinator.
+
     public class ReceiveFileActor : ReceiveActor
     {
         private readonly IReceiveFileHeaderRepository fileHeaderRepository;

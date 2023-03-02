@@ -5,9 +5,9 @@ using AkkaTransfer.Data.SendFile;
 
 namespace AkkaTransfer.Actors
 {
-    public class SendFileCoordinator : ReceiveActor
+    public sealed class SendFileCoordinator : ReceiveActor
     {
-        private readonly ISendFileHeaderRepository sendFileHeaderRepository;
+        private readonly ISendFileHeaderRepository sendFileHeaderRepository;        
 
         public SendFileCoordinator(FileBox sendFilebox, ISendFileHeaderRepository sendFileHeaderRepository)
         {
