@@ -19,7 +19,7 @@ namespace AkkaTransfer
 
         public Manifest Difference(Manifest oldManifest, Manifest newManifest)
         {
-            var fileDifference = oldManifest.Files.Except(newManifest.Files).ToHashSet();
+            var fileDifference = newManifest.Files.Except(oldManifest.Files).ToHashSet();
 
             return new Manifest(DateTime.Now, fileDifference);
         }
