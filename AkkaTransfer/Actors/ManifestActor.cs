@@ -8,7 +8,7 @@ namespace AkkaTransfer.Actors
     internal sealed class ManifestActor : ReceiveActor
     {
         private const string ManifestActorName = "manifest-actor";
-        private const string SendActorName = "send-actor";
+        private const string SendActorName = "send-file-coordinator-actor";
 
         private readonly string foreignAddress;
         private readonly ManifestHelper senderManifestHelper;
@@ -27,7 +27,7 @@ namespace AkkaTransfer.Actors
         // File sending actor
         public void SendManifest(ManifestRequest _)
         {
-            Manifest newManifest = this.senderManifestHelper.CreateManifest();
+            Manifest newManifest = this.senderManifestHelper.ReadManifest();
 
             Sender.Tell(newManifest);
         }
@@ -44,7 +44,7 @@ namespace AkkaTransfer.Actors
             ManifestHelper.PrintManifest(receivedManifest);
 
             // Calculate which files to ask for.
-            Manifest oldManifest = this.receiverManifestHelper.CreateManifest();
+            Manifest oldManifest = this.receiverManifestHelper.ReadManifest();
 
             Manifest difference = this.receiverManifestHelper.Difference(oldManifest, receivedManifest);
 
@@ -55,7 +55,7 @@ namespace AkkaTransfer.Actors
             // Ask for files.
             var sendActor = Context.ActorSelection(foreignAddress + SendActorName);
 
-            sendActor.Tell(difference); // TODO: Make this actor only send the files in the difference list.
+            sendActor.Tell(difference);
         }
     }
 }
