@@ -8,7 +8,7 @@ namespace AkkaTransfer.Actors
     {
         private readonly IReceiveFileHeaderRepository fileHeaderRepository;
         private readonly FileBox receiveBox;
-        ActorSelection timeoutActor;
+        private readonly ActorSelection timeoutActor;
 
         public FileRebuilderActor(FileBox receiveBox, IReceiveFileHeaderRepository fileHeaderRepository)
         {
@@ -46,8 +46,6 @@ namespace AkkaTransfer.Actors
                 Console.WriteLine("File fully received: " + header.FileName);
 
                 var transactionActor = Context.ActorSelection("user/file-receive-timeout-actor");
-
-
             }
             else
             {
@@ -60,6 +58,8 @@ namespace AkkaTransfer.Actors
 
     sealed class EmptyMessage { }
 
+    // TODO: Start in FileRebuilderActor if it isn't already running.
+    // TODO: Shutdown after full Manifest has been received.
     internal sealed class FileReceiveTimeoutActor : ReceiveActor
     {
         private readonly IManifestRepository receiveManifestRepository;

@@ -11,7 +11,7 @@ namespace AkkaTransfer.Actors
             {
                 Console.WriteLine($"Send part {message.Position} of {message.Count}");
 
-                var address = $"akka.tcp://file-transfer-system@{HoconLoader.ReadSendIpAndPort("hocon.send")}/user/receive-file-actor";
+                var address = $"akka.tcp://file-transfer-system@{HoconLoader.ReadSendIpAndPort("hocon.send")}/user/receive-file-coordinator-actor";
 
                 var receiveActor = Context.ActorSelection(address);
 

@@ -40,8 +40,11 @@ namespace AkkaTransfer
             Props sendProps = Props.Create(() => new SendFileCoordinator(fileSendBox, sendFileHeaderRepo));
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
-            Props receiveProps = Props.Create(() => new ReceiveFileActor(fileReceiveBox, receiveFileHeaderRepo));
-            IActorRef receiveActor = system.ActorOf(receiveProps);
+            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
+            IActorRef receiveActor = system.ActorOf(receiveProps,"receive-file-coordinator-actor");
+
+            Props timeoutProps = Props.Create(() => new FileReceiveTimeoutActor(receiveManifestRepo, receiveFileHeaderRepo));
+            IActorRef timeoutActor = system.ActorOf(timeoutProps, "file-receive-timeout-actor");
 
             RequestInput(manifestActor);
         }
