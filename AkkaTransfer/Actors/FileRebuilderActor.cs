@@ -1,5 +1,4 @@
 ﻿using Akka.Actor;
-using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
 
 namespace AkkaTransfer.Actors
@@ -7,22 +6,19 @@ namespace AkkaTransfer.Actors
     public class FileRebuilderActor : ReceiveActor
     {
         private readonly IReceiveFileHeaderRepository fileHeaderRepository;
-        private readonly IManifestRepository receiveManifestRepository;
         private readonly FileBox receiveBox;
 
-        private readonly IActorRef timeoutActor;
+        private readonly ActorSelection timeoutActor;
 
         public FileRebuilderActor
             (FileBox receiveBox
             , IReceiveFileHeaderRepository fileHeaderRepository
-            , IManifestRepository receiveManifestRepository
             )
         {
             this.fileHeaderRepository = fileHeaderRepository;
-            this.receiveManifestRepository = receiveManifestRepository;
             this.receiveBox = receiveBox;
 
-            var timeoutActor = Context.ActorSelection($"/user/file-receive-timeout-actor");
+            this.timeoutActor = Context.ActorSelection($"/user/file-receive-timeout-actor");
 
             Receive<int>(async id => await WriteFileIfComplete(id));
         }
@@ -47,7 +43,8 @@ namespace AkkaTransfer.Actors
 
                 this.fileHeaderRepository.DeleteFileHeader(id);
 
-                Console.WriteLine("File fully received: " + header.FileName);
+                var manifestCompleteActor = Context.ActorSelection("/user/manifest-complete-actor"); // TODO: test that this works.
+                manifestCompleteActor.Tell(header.FileName);
             }
             else
             {
@@ -55,69 +52,6 @@ namespace AkkaTransfer.Actors
 
                 await WriteFileIfComplete(id);
             }
-        }
-    }
-
-    sealed class EmptyMessage { }
-
-    internal sealed class FileReceiveTimeoutActor : ReceiveActor
-    {
-        private readonly IManifestRepository receiveManifestRepository;
-        private readonly IReceiveFileHeaderRepository receiveFileHeaderRepository;
-
-        private DateTime LastReceivedTimestamp = DateTime.UtcNow;
-
-        private IScheduler scheduler;
-        private ICancelable schedulerCancel;
-
-        public FileReceiveTimeoutActor(IManifestRepository receiveManifestRepository, IReceiveFileHeaderRepository receiveFileHeaderRepository)
-        {
-            this.receiveFileHeaderRepository = receiveFileHeaderRepository;
-            this.receiveManifestRepository = receiveManifestRepository;
-
-            this.scheduler = Context.System.Scheduler;
-            this.schedulerCancel = default!;
-
-            Become(Sleep);
-        }
-
-        public void Awake()
-        {
-            this.schedulerCancel = this.scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
-
-            Receive<int>(id =>
-            {
-                LastReceivedTimestamp = DateTime.UtcNow;
-            });
-
-            Receive<EmptyMessage>(msg =>
-            {
-                if (DateTime.UtcNow - LastReceivedTimestamp > TimeSpan.FromSeconds(10.0))
-                {
-                    Console.WriteLine("Receiving files timed out, requesting missing file pieces.");
-
-                    var manifest = this.receiveManifestRepository.LoadNewestManifest();
-
-                    var missingParts = this.receiveFileHeaderRepository.GetMissingPieces(manifest);
-
-                    // Move this setup to constructor.
-                    string ipAndPort = HoconLoader.ReadSendIpAndPort("hocon.send");
-                    string address = $"akka.tcp://file-transfer-system@{ipAndPort}/user/send-file-coordinator-actor";
-
-                    var sendActor = Context.ActorSelection(address);
-
-                    sendActor.Tell(missingParts);
-
-                    Become(Sleep);
-                }
-            });
-        }
-
-        public void Sleep()
-        {
-            this.schedulerCancel?.Cancel();
-
-            Receive<int>(x => Become(Awake));
         }
     }
 }
