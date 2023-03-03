@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AkkaTransfer
 {
+    
+
     internal class Program
     {
         internal static void Main(string[] args)
@@ -22,9 +24,11 @@ namespace AkkaTransfer
 
             ProgressBar progressBar = new();
 
-            IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(dbContext);
+            IDbContextFactory dbContextFactory = new DbContextFactory();
+
+            IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(dbContextFactory);
             IManifestRepository sendManifestRepo = new SendManifestRepository(dbContext);
-            ISendFileHeaderRepository sendFileHeaderRepo = new SendFileHeaderRepository(dbContext);
+            ISendFileHeaderRepository sendFileHeaderRepo = new SendFileHeaderRepository(dbContextFactory);
             IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(dbContext);
 
             FileBox fileSendBox = new("SendBox");

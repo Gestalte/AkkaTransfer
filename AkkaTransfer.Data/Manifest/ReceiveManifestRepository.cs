@@ -1,19 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AkkaTransfer.Data.Manifest
 {
     public sealed class ReceiveManifestRepository : IManifestRepository
     {
         private readonly ReceiveDbContext context;
+        private readonly IDbContextFactory dbcontextFactory;
 
-        public ReceiveManifestRepository(ReceiveDbContext context)
+        public ReceiveManifestRepository(IDbContextFactory dbcontextFactory)
         {
-            this.context = context;
+            this.dbcontextFactory = dbcontextFactory;
+            this.context = this.dbcontextFactory.CreateDbContext();
         }
 #nullable enable
         public Common.Manifest LoadNewestManifest()

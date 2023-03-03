@@ -6,10 +6,12 @@ namespace AkkaTransfer.Data.SendFile
     public sealed class SendFileHeaderRepository : ISendFileHeaderRepository
     {
         private readonly ReceiveDbContext context;
+        private readonly IDbContextFactory dbContextFactory;
 
-        public SendFileHeaderRepository(ReceiveDbContext context)
+        public SendFileHeaderRepository(IDbContextFactory dbContextFactory)
         {
-            this.context = context;
+            this.dbContextFactory = dbContextFactory;
+            this.context = this.dbContextFactory.CreateDbContext();
         }
 
 #nullable enable
