@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
 using AkkaTransfer.Actors;
+using AkkaTransfer.Common;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
@@ -34,14 +35,23 @@ namespace AkkaTransfer
             Config hocon = HoconLoader.FromFile("akka.net.hocon");
             ActorSystem system = ActorSystem.Create("file-transfer-system", hocon);
 
-            Props manifestProps = Props.Create(() => new ManifestActor(HoconLoader.ReadSendIpAndPort("hocon.send"), sendManifestHelper, receiveManifestHelper));
+            Props manifestProps = Props.Create(() => new ManifestActor
+                (HoconLoader.ReadSendIpAndPort("hocon.send")
+                , sendManifestHelper
+                , receiveManifestHelper
+                , sendFileHeaderRepo
+                , fileSendBox
+                ));
             IActorRef manifestActor = system.ActorOf(manifestProps, "manifest-actor");
 
             Props sendProps = Props.Create(() => new SendFileCoordinator(fileSendBox, sendFileHeaderRepo));
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
             Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
-            IActorRef receiveActor = system.ActorOf(receiveProps,"receive-file-coordinator-actor");
+            IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
+
+            Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox, receiveFileHeaderRepo, receiveManifestRepo));
+            IActorRef rebuildActor = system.ActorOf(rebuildProps, "file-rebuilder-actor");
 
             Props timeoutProps = Props.Create(() => new FileReceiveTimeoutActor(receiveManifestRepo, receiveFileHeaderRepo));
             IActorRef timeoutActor = system.ActorOf(timeoutProps, "file-receive-timeout-actor");
@@ -64,7 +74,7 @@ namespace AkkaTransfer
                 case "r":
                     manifestActor.Tell(new SendManifestRequest());
                     Console.ReadLine();
-                    break;                    
+                    break;
                 default:
                     Console.WriteLine("Command not recognised.");
                     RequestInput(manifestActor);
@@ -73,3 +83,7 @@ namespace AkkaTransfer
         }
     }
 }
+// TODO: File transfer progress bars
+// TODO: Mechanism that tells you when the download is finished.
+// Maybe an actor similar to rebuilder that checks the folder vs the manifest
+// on a sheduler.
