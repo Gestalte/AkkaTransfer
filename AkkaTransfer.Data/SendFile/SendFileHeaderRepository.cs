@@ -3,6 +3,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AkkaTransfer.Data.SendFile
 {
+    public sealed class SendFileHeaderRepositoryFactory
+    {
+        private readonly IDbContextFactory dbContextFactory;
+
+        public SendFileHeaderRepositoryFactory(IDbContextFactory dbContextFactory)
+        {
+            this.dbContextFactory = dbContextFactory;
+        }
+
+        public SendFileHeaderRepository Create()
+        {
+            return new SendFileHeaderRepository(dbContextFactory);
+        }
+    }
+
     public sealed class SendFileHeaderRepository : ISendFileHeaderRepository
     {
         private readonly ReceiveDbContext context;

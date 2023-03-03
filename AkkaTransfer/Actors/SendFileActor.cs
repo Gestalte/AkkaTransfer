@@ -10,9 +10,12 @@ namespace AkkaTransfer.Actors
         private readonly ISendFileHeaderRepository sendFileHeaderRepository;
         private readonly IActorRef sendRouter;
 
-        public SendFileActor(ISendFileHeaderRepository sendFileHeaderRepository)
+        private readonly SendFileHeaderRepositoryFactory sendFileHeaderFactory;
+
+        public SendFileActor(SendFileHeaderRepositoryFactory sendFileHeaderFactory)
         {
-            this.sendFileHeaderRepository = sendFileHeaderRepository;
+            this.sendFileHeaderFactory = sendFileHeaderFactory;
+            this.sendFileHeaderRepository = this.sendFileHeaderFactory.Create();
 
             var props = Props
                 .Create<SendPartActor>()
