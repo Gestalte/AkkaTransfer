@@ -17,7 +17,7 @@ namespace AkkaTransfer
             this.manifestRepository = manifestRepository;
         }
 
-        private Manifest Difference(Manifest oldManifest, Manifest newManifest)
+        public Manifest Difference(Manifest oldManifest, Manifest newManifest)
         {
             var fileDifference = newManifest.Files.Except(oldManifest.Files).ToHashSet();
 
@@ -32,7 +32,7 @@ namespace AkkaTransfer
             return Encoding.Default.GetString(md5.ComputeHash(stream));
         }
 
-        private Manifest LoadManifestFromDB()
+        public Manifest LoadManifestFromDB()
         {
             return this.manifestRepository.LoadNewestManifest();
         }
