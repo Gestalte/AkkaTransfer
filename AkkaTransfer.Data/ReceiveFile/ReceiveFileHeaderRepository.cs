@@ -4,13 +4,30 @@ using System.Diagnostics;
 
 namespace AkkaTransfer.Data.ReceiveFile
 {
+    public class ReceiveFileHeaderRepositoryFactory
+    {
+        private readonly IDbContextFactory dbContextFactory;
+
+        public ReceiveFileHeaderRepositoryFactory(DbContextFactory dbContextFactory)
+        {
+            this.dbContextFactory = dbContextFactory;
+        }
+
+        public ReceiveFileHeaderRepository Create()
+        {
+            return new ReceiveFileHeaderRepository(dbContextFactory);
+        }
+    }
+
     public class ReceiveFileHeaderRepository : IReceiveFileHeaderRepository
     {
         private readonly ReceiveDbContext context;
+        private readonly IDbContextFactory dbContextFactory;
 
-        public ReceiveFileHeaderRepository(ReceiveDbContext context)
+        public ReceiveFileHeaderRepository(IDbContextFactory dbContextFactory)
         {
-            this.context = context;
+            this.dbContextFactory = dbContextFactory;
+            this.context = this.dbContextFactory.CreateDbContext();
         }
 
 #nullable enable

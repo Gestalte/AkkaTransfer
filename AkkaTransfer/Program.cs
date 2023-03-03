@@ -29,7 +29,7 @@ namespace AkkaTransfer
             IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(dbContextFactory);
             IManifestRepository sendManifestRepo = new SendManifestRepository(dbContext);
             ISendFileHeaderRepository sendFileHeaderRepo = new SendFileHeaderRepository(dbContextFactory);
-            IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(dbContext);
+            IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(dbContextFactory);
 
             FileBox fileSendBox = new("SendBox");
             FileBox fileReceiveBox = new("ReceiveBox");
@@ -49,10 +49,11 @@ namespace AkkaTransfer
                 ));
             IActorRef manifestActor = system.ActorOf(manifestProps, "manifest-actor");
 
-            Props sendProps = Props.Create(() => new SendFileCoordinator(sendFileHeaderRepo));
+            Props sendProps = Props.Create(() => new SendFileCoordinator(new SendFileHeaderRepositoryFactory(dbContextFactory)));
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
-            SetupReceiveActor(system, fileReceiveBox);
+            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
+            IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
 
             ReceiveFileCoordinatorActor.FilePartMessageReceived += f =>
             {
@@ -90,16 +91,6 @@ namespace AkkaTransfer
             {
                 Thread.Sleep(100);
             }
-        }
-
-        private static void SetupReceiveActor(ActorSystem system, FileBox fileReceiveBox)
-        {
-            ReceiveDbContext receiveDbContext = new();
-
-            IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(receiveDbContext);
-
-            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
-            IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
         }
 
         internal static void RequestInput(IActorRef manifestActor)
