@@ -17,7 +17,7 @@ namespace AkkaTransfer
             this.manifestRepository = manifestRepository;
         }
 
-        public Manifest Difference(Manifest oldManifest, Manifest newManifest)
+        private Manifest Difference(Manifest oldManifest, Manifest newManifest)
         {
             var fileDifference = newManifest.Files.Except(oldManifest.Files).ToHashSet();
 
@@ -58,7 +58,7 @@ namespace AkkaTransfer
             Manifest dbManifest = LoadManifestFromDB();
             Manifest directoryManifest = MapManifestFromDirectory(this.fileBox.BoxPath);
 
-            if (dbManifest == directoryManifest)
+            if (dbManifest.Files == directoryManifest.Files)
             {
                 return dbManifest;
             }
