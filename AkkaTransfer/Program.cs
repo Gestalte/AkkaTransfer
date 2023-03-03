@@ -1,7 +1,6 @@
 ﻿using Akka.Actor;
 using Akka.Configuration;
 using AkkaTransfer.Actors;
-using AkkaTransfer.Common;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
@@ -12,6 +11,8 @@ namespace AkkaTransfer
 {
     internal class Program
     {
+
+
         internal static void Main(string[] args)
         {
             var dbContext = new ReceiveDbContext();
@@ -20,6 +21,8 @@ namespace AkkaTransfer
             {
                 dbContext.Database.Migrate();
             }
+
+            ProgressBar progressBar = new();
 
             IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(dbContext);
             IManifestRepository sendManifestRepo = new SendManifestRepository(dbContext);
@@ -44,19 +47,47 @@ namespace AkkaTransfer
                 ));
             IActorRef manifestActor = system.ActorOf(manifestProps, "manifest-actor");
 
-            Props sendProps = Props.Create(() => new SendFileCoordinator(fileSendBox, sendFileHeaderRepo));
+            Props sendProps = Props.Create(() => new SendFileCoordinator(sendFileHeaderRepo));
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
             Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
             IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
+            ReceiveFileCoordinatorActor.FilePartMessageReceived += f =>
+            {
+                if (progressBar.progressBars.Select(s => s.Item1).Contains(f.Filename))
+                {
+                    (string fileName, int position, int progress) = progressBar.progressBars.Where(w => w.Item1 == f.Filename).FirstOrDefault();
 
-            Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox, receiveFileHeaderRepo, receiveManifestRepo));
+                    progressBar.UpdateProgressBar(f.Filename, f.Count, progress, position);
+                }
+                else
+                {
+                    progressBar.DrawProgressBar(f.Filename, f.Count, 1);
+                }
+            };
+
+            Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox, receiveFileHeaderRepo));
             IActorRef rebuildActor = system.ActorOf(rebuildProps, "file-rebuilder-actor");
 
             Props timeoutProps = Props.Create(() => new FileReceiveTimeoutActor(receiveManifestRepo, receiveFileHeaderRepo));
             IActorRef timeoutActor = system.ActorOf(timeoutProps, "file-receive-timeout-actor");
 
+            Props manifestCompleteProps = Props.Create(() => new ManifestCompleteActor(receiveManifestRepo));
+            IActorRef manifestCompleteActor = system.ActorOf(manifestCompleteProps, "manifest-complete-actor");
+            ManifestCompleteActor.ManifestReceived += () =>
+            {
+                Console.WriteLine();
+                Console.WriteLine("All files have been received.");
+
+                RequestInput(manifestActor);
+            };
+
             RequestInput(manifestActor);
+
+            while (true)
+            {
+                Thread.Sleep(100);
+            }
         }
 
         internal static void RequestInput(IActorRef manifestActor)
@@ -73,7 +104,6 @@ namespace AkkaTransfer
                     break;
                 case "r":
                     manifestActor.Tell(new SendManifestRequest());
-                    Console.ReadLine();
                     break;
                 default:
                     Console.WriteLine("Command not recognised.");
@@ -82,8 +112,41 @@ namespace AkkaTransfer
             }
         }
     }
+
+    internal class ProgressBar
+    {
+        public List<(string fileName, int position, int progress)> progressBars = new();
+
+        public (string fileName, int position, int progress) DrawProgressBar(string filename, int length, int progress)
+        {
+            float percent = ((float)progress / length) * 50;
+
+            string barLength = "";
+            if (percent > 1)
+            {
+                barLength = Enumerable.Range(0, (int)percent).Select(i => "=").Aggregate((a, b) => a + b);
+            }
+            Console.WriteLine("{0}[{1}]", filename.PadRight(48), barLength.PadRight(50));
+
+            return (filename, Console.GetCursorPosition().Top - 1, 1);
+        }
+
+        public void UpdateProgressBar(string filename, int length, int progress, int position)
+        {
+            var lenSpaces = Enumerable.Range(0, length).Select(i => " ").Aggregate((a, b) => a + b);
+
+            var currentPos = Console.GetCursorPosition().Top;
+            Console.SetCursorPosition(0, Console.CursorTop - (currentPos - position));
+
+            float percent = ((float)progress / length) * 50;
+            string barLength = "";
+            if (percent > 1)
+            {
+                barLength = Enumerable.Range(0, (int)percent).Select(i => "=").Aggregate((a, b) => a + b);
+            }
+            Console.WriteLine("{0}[{1}]", filename.PadRight(48), barLength.PadRight(50));
+
+            Console.SetCursorPosition(0, currentPos);
+        }
+    }
 }
-// TODO: File transfer progress bars
-// TODO: Mechanism that tells you when the download is finished.
-// Maybe an actor similar to rebuilder that checks the folder vs the manifest
-// on a sheduler.
