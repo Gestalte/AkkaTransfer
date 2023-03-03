@@ -1,6 +1,6 @@
 ﻿namespace AkkaTransfer
 {
-    public  class FileBox
+    public sealed class FileBox
     {
         public FileBox(string boxName)
         {
