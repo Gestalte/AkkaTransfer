@@ -11,8 +11,6 @@ namespace AkkaTransfer
 {
     internal class Program
     {
-
-
         internal static void Main(string[] args)
         {
             var dbContext = new ReceiveDbContext();
@@ -50,8 +48,8 @@ namespace AkkaTransfer
             Props sendProps = Props.Create(() => new SendFileCoordinator(sendFileHeaderRepo));
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
-            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
-            IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
+            SetupReceiveActor(system, fileReceiveBox);
+
             ReceiveFileCoordinatorActor.FilePartMessageReceived += f =>
             {
                 if (progressBar.progressBars.Select(s => s.Item1).Contains(f.Filename))
@@ -88,6 +86,16 @@ namespace AkkaTransfer
             {
                 Thread.Sleep(100);
             }
+        }
+
+        private static void SetupReceiveActor(ActorSystem system, FileBox fileReceiveBox)
+        {
+            ReceiveDbContext receiveDbContext = new();
+
+            IReceiveFileHeaderRepository receiveFileHeaderRepo = new ReceiveFileHeaderRepository(receiveDbContext);
+
+            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
+            IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
         }
 
         internal static void RequestInput(IActorRef manifestActor)
