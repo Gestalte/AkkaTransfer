@@ -1,26 +1,26 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 
 namespace AkkaTransfer.Actors
 {
     public class ManifestCompleteActor : ReceiveActor
     {
-        private readonly IManifestRepository receiveManifestRepo;
         private readonly List<string> completedFiles;
 
         public static event Action? ManifestReceived;
 
-        public ManifestCompleteActor(IManifestRepository receiveManifestRepo)
+        public ManifestCompleteActor()
         {
-            this.receiveManifestRepo = receiveManifestRepo;
-
             this.completedFiles = new();
 
             Receive<string>(filename =>
             {
+                IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(new DbContextFactory());
+
                 completedFiles.Add(filename);
 
-                var manifest = this.receiveManifestRepo.LoadNewestManifest();
+                var manifest = receiveManifestRepo.LoadNewestManifest();
 
                 var filesNotReceived = manifest.Files
                     .Select(s => s.Filename)

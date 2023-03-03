@@ -1,5 +1,8 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Common;
+using AkkaTransfer.Data;
+using AkkaTransfer.Data.Manifest;
+using AkkaTransfer.Data.ReceiveFile;
 using AkkaTransfer.Data.SendFile;
 
 namespace AkkaTransfer.Actors
@@ -12,25 +15,12 @@ namespace AkkaTransfer.Actors
         private const string SendActorName = "send-file-coordinator-actor";
 
         private readonly string foreignAddress;
-        private readonly ManifestHelper senderManifestHelper;
-        private readonly ManifestHelper receiverManifestHelper;
-
-        private readonly ISendFileHeaderRepository sendFileRepo;
 
         private readonly FileBox fileSendbox;
 
-        public ManifestActor
-            (string ipAndPort
-            , ManifestHelper senderManifestHelper
-            , ManifestHelper receiverManifestHelper
-            , ISendFileHeaderRepository sendFileRepo
-            , FileBox fileSendbox
-            )
+        public ManifestActor(string ipAndPort, FileBox fileSendbox)
         {
-            this.sendFileRepo = sendFileRepo;
             this.fileSendbox = fileSendbox;
-            this.senderManifestHelper = senderManifestHelper;
-            this.receiverManifestHelper = receiverManifestHelper;
             this.foreignAddress = $"akka.tcp://file-transfer-system@{ipAndPort}/user/";
 
             Receive<ManifestRequest>(SendManifest);
@@ -40,8 +30,13 @@ namespace AkkaTransfer.Actors
         // File sending actor
         public void SendManifest(ManifestRequest _)
         {
-            Manifest oldManifest = this.senderManifestHelper.LoadManifestFromDB();
-            Manifest newManifest = this.senderManifestHelper.ReadManifest();
+            SendManifestRepository sendManifestRepository = new SendManifestRepository(new ReceiveDbContext());
+            SendFileHeaderRepository sendFileRepo = new SendFileHeaderRepository(new DbContextFactory());
+
+            ManifestHelper senderManifestHelper = new ManifestHelper(this.fileSendbox, sendManifestRepository);
+
+            Manifest oldManifest = senderManifestHelper.LoadManifestFromDB();
+            Manifest newManifest = senderManifestHelper.ReadManifest();
 
             Sender.Tell(newManifest);
 
@@ -49,7 +44,7 @@ namespace AkkaTransfer.Actors
             {
                 // Replace the old manifest's pieces with those in the new manifest.
 
-                this.sendFileRepo.DeleteAll();
+                sendFileRepo.DeleteAll();
 
                 var filepaths = this.fileSendbox.GetFilesInBox();
 
@@ -59,7 +54,7 @@ namespace AkkaTransfer.Actors
 
                     for (int j = 0; j < messages.Length; j++)
                     {
-                        this.sendFileRepo.AddFileHeaderAndPieces(messages[j]);
+                        sendFileRepo.AddFileHeaderAndPieces(messages[j]);
                     }
                 }
             }
@@ -68,6 +63,11 @@ namespace AkkaTransfer.Actors
         // File receiving actor
         public void RequestManifest(SendManifestRequest _)
         {
+            FileBox fileBox = new("ReceiveBox");
+
+            var receiveManifestRepository = new ReceiveManifestRepository(new DbContextFactory());
+            var receiverManifestHelper = new ManifestHelper(fileBox, receiveManifestRepository);
+
             // Request manifest
             var manifestActor = Context.ActorSelection(foreignAddress + ManifestActorName);
 
@@ -77,9 +77,9 @@ namespace AkkaTransfer.Actors
             ManifestHelper.PrintManifest(receivedManifest);
 
             // Calculate which files to ask for.
-            Manifest oldManifest = this.receiverManifestHelper.ReadManifest();
+            Manifest oldManifest = receiverManifestHelper.ReadManifest();
 
-            Manifest difference = this.receiverManifestHelper.Difference(oldManifest, receivedManifest);
+            Manifest difference = receiverManifestHelper.Difference(oldManifest, receivedManifest);
 
             Console.Out.WriteLine();
             Console.Out.WriteLine("Local files differ by:");

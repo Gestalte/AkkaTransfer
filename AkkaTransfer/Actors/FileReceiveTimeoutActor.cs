@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
 
@@ -6,9 +7,6 @@ namespace AkkaTransfer.Actors
 {
     internal sealed class FileReceiveTimeoutActor : ReceiveActor
     {
-        private readonly IManifestRepository receiveManifestRepository;
-        private readonly IReceiveFileHeaderRepository receiveFileHeaderRepository;
-
         private DateTime LastReceivedTimestamp = DateTime.UtcNow;
 
         private IScheduler scheduler;
@@ -17,11 +15,8 @@ namespace AkkaTransfer.Actors
         private readonly string ipAndPort;
         private readonly string address;
 
-        public FileReceiveTimeoutActor(IManifestRepository receiveManifestRepository, IReceiveFileHeaderRepository receiveFileHeaderRepository)
+        public FileReceiveTimeoutActor()
         {
-            this.receiveFileHeaderRepository = receiveFileHeaderRepository;
-            this.receiveManifestRepository = receiveManifestRepository;
-
             this.scheduler = Context.System.Scheduler;
             this.schedulerCancel = default!;
 
@@ -33,7 +28,7 @@ namespace AkkaTransfer.Actors
 
         public void Awake()
         {
-            Console.WriteLine("Awake",nameof(FileReceiveTimeoutActor));
+            Console.WriteLine("Awake", nameof(FileReceiveTimeoutActor));
             this.schedulerCancel = this.scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
 
             Receive<int>(id =>
@@ -45,11 +40,14 @@ namespace AkkaTransfer.Actors
             {
                 if (DateTime.UtcNow - LastReceivedTimestamp > TimeSpan.FromSeconds(10.0))
                 {
+                    var receiveFileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
+                    var receiveManifestRepository = new ReceiveManifestRepository(new DbContextFactory());
+
                     Console.WriteLine("Receiving files timed out, requesting missing file pieces.");
 
-                    var manifest = this.receiveManifestRepository.LoadNewestManifest();
+                    var manifest = receiveManifestRepository.LoadNewestManifest();
 
-                    var missingParts = this.receiveFileHeaderRepository.GetMissingPieces(manifest);
+                    var missingParts = receiveFileHeaderRepository.GetMissingPieces(manifest);
 
                     var sendCoordinator = Context.ActorSelection(this.address);
 

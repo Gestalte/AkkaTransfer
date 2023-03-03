@@ -9,8 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AkkaTransfer
 {
-    
-
     internal class Program
     {
         internal static void Main(string[] args)
@@ -42,17 +40,14 @@ namespace AkkaTransfer
 
             Props manifestProps = Props.Create(() => new ManifestActor
                 (HoconLoader.ReadSendIpAndPort("hocon.send")
-                , sendManifestHelper
-                , receiveManifestHelper
-                , sendFileHeaderRepo
                 , fileSendBox
                 ));
             IActorRef manifestActor = system.ActorOf(manifestProps, "manifest-actor");
 
-            Props sendProps = Props.Create(() => new SendFileCoordinator(new SendFileHeaderRepositoryFactory(dbContextFactory)));
+            Props sendProps = Props.Create(() => new SendFileCoordinator());
             IActorRef sendActor = system.ActorOf(sendProps, "send-file-coordinator-actor");
 
-            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox, receiveFileHeaderRepo));
+            Props receiveProps = Props.Create(() => new ReceiveFileCoordinatorActor(fileReceiveBox));
             IActorRef receiveActor = system.ActorOf(receiveProps, "receive-file-coordinator-actor");
 
             ReceiveFileCoordinatorActor.FilePartMessageReceived += f =>
@@ -69,13 +64,13 @@ namespace AkkaTransfer
                 }
             };
 
-            Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox, receiveFileHeaderRepo));
+            Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox));
             IActorRef rebuildActor = system.ActorOf(rebuildProps, "file-rebuilder-actor");
 
-            Props timeoutProps = Props.Create(() => new FileReceiveTimeoutActor(receiveManifestRepo, receiveFileHeaderRepo));
+            Props timeoutProps = Props.Create(() => new FileReceiveTimeoutActor());
             IActorRef timeoutActor = system.ActorOf(timeoutProps, "file-receive-timeout-actor");
 
-            Props manifestCompleteProps = Props.Create(() => new ManifestCompleteActor(receiveManifestRepo));
+            Props manifestCompleteProps = Props.Create(() => new ManifestCompleteActor());
             IActorRef manifestCompleteActor = system.ActorOf(manifestCompleteProps, "manifest-complete-actor");
             ManifestCompleteActor.ManifestReceived += () =>
             {

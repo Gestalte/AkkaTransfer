@@ -1,21 +1,16 @@
 ﻿using Akka.Actor;
+using AkkaTransfer.Data;
 using AkkaTransfer.Data.ReceiveFile;
 
 namespace AkkaTransfer.Actors
 {
     public class FileRebuilderActor : ReceiveActor
     {
-        private readonly IReceiveFileHeaderRepository fileHeaderRepository;
         private readonly FileBox receiveBox;
-
         private readonly ActorSelection timeoutActor;
 
-        public FileRebuilderActor
-            (FileBox receiveBox
-            , IReceiveFileHeaderRepository fileHeaderRepository
-            )
+        public FileRebuilderActor(FileBox receiveBox)
         {
-            this.fileHeaderRepository = fileHeaderRepository;
             this.receiveBox = receiveBox;
 
             this.timeoutActor = Context.ActorSelection($"/user/file-receive-timeout-actor");
@@ -27,9 +22,11 @@ namespace AkkaTransfer.Actors
         {
             this.timeoutActor.Tell(id);
 
-            if (this.fileHeaderRepository.HasEntireFileBeenReceived(id))
+            ReceiveFileHeaderRepository fileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
+
+            if (fileHeaderRepository.HasEntireFileBeenReceived(id))
             {
-                var header = this.fileHeaderRepository.GetFileHeaderById(id);
+                var header = fileHeaderRepository.GetFileHeaderById(id);
 
                 var headerPieces = header!.ReceiveFilePieces
                     .AsParallel()
@@ -41,7 +38,7 @@ namespace AkkaTransfer.Actors
 
                 File.WriteAllBytes(Path.Combine(this.receiveBox.BoxPath, header.FileName), newBytes);
 
-                this.fileHeaderRepository.DeleteFileHeader(id);
+                fileHeaderRepository.DeleteFileHeader(id);
 
                 var manifestCompleteActor = Context.ActorSelection("/user/manifest-complete-actor"); // TODO: test that this works.
                 manifestCompleteActor.Tell(header.FileName);

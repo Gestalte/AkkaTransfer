@@ -7,17 +7,9 @@ namespace AkkaTransfer.Actors
 {
     public sealed class SendFileCoordinator : ReceiveActor
     {
-        //private readonly ISendFileHeaderRepository sendFileHeaderRepository;
-        private readonly SendFileHeaderRepositoryFactory sendFileHeaderRepositoryFactory;
-
-        //public SendFileCoordinator(ISendFileHeaderRepository sendFileHeaderRepository)
-        public SendFileCoordinator(SendFileHeaderRepositoryFactory sendFileHeaderRepositoryFactory)
+        public SendFileCoordinator()
         {
-            //this.sendFileHeaderRepository = sendFileHeaderRepository;
-
-            this.sendFileHeaderRepositoryFactory = sendFileHeaderRepositoryFactory;
-
-            var sendProps = Props.Create(() => new SendFileActor(this.sendFileHeaderRepositoryFactory))
+            var sendProps = Props.Create(() => new SendFileActor())
                 .WithRouter(new RoundRobinPool(5, new DefaultResizer(5, 1000)));
 
             var sendFileRouter = Context.ActorOf(sendProps);
