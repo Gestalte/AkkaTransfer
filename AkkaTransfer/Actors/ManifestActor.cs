@@ -43,6 +43,8 @@ namespace AkkaTransfer.Actors
             Manifest oldManifest = this.senderManifestHelper.LoadManifestFromDB();
             Manifest newManifest = this.senderManifestHelper.ReadManifest();
 
+            Sender.Tell(newManifest);
+
             if (newManifest.Files != oldManifest.Files)
             {
                 // Replace the old manifest's pieces with those in the new manifest.
@@ -61,8 +63,6 @@ namespace AkkaTransfer.Actors
                     }
                 }
             }
-
-            Sender.Tell(newManifest);
         }
 
         // File receiving actor
