@@ -11,6 +11,6 @@ namespace AkkaTransfer.Data.ReceiveFile
         void DeleteFileHeader(int Id);
         bool HasEntireFileBeenReceived(int fileHeaderId);
 
-        List<(string, List<int>)> GetMissingPieces(Common.Manifest manifest);
+        MissingFileParts GetMissingPieces(Common.Manifest manifest);
     }
 }
