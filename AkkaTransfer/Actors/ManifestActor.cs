@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Common;
+using AkkaTransfer.Data.SendFile;
 
 namespace AkkaTransfer.Actors
 {
@@ -14,8 +15,20 @@ namespace AkkaTransfer.Actors
         private readonly ManifestHelper senderManifestHelper;
         private readonly ManifestHelper receiverManifestHelper;
 
-        public ManifestActor(string ipAndPort, ManifestHelper senderManifestHelper, ManifestHelper receiverManifestHelper)
+        private readonly ISendFileHeaderRepository sendFileRepo;
+
+        private readonly FileBox fileSendbox;
+
+        public ManifestActor
+            (string ipAndPort
+            , ManifestHelper senderManifestHelper
+            , ManifestHelper receiverManifestHelper
+            , ISendFileHeaderRepository sendFileRepo
+            , FileBox fileSendbox
+            )
         {
+            this.sendFileRepo = sendFileRepo;
+            this.fileSendbox = fileSendbox;
             this.senderManifestHelper = senderManifestHelper;
             this.receiverManifestHelper = receiverManifestHelper;
             this.foreignAddress = $"akka.tcp://file-transfer-system@{ipAndPort}/user/";
@@ -27,7 +40,27 @@ namespace AkkaTransfer.Actors
         // File sending actor
         public void SendManifest(ManifestRequest _)
         {
+            Manifest oldManifest = this.senderManifestHelper.LoadManifestFromDB();
             Manifest newManifest = this.senderManifestHelper.ReadManifest();
+
+            if (newManifest.Files != oldManifest.Files)
+            {
+                // Replace the old manifest's pieces with those in the new manifest.
+
+                this.sendFileRepo.DeleteAll();
+
+                var filepaths = this.fileSendbox.GetFilesInBox();
+
+                for (int i = 0; i < filepaths.Count; i++)
+                {
+                    var messages = FileHelper.SplitIntoMessages(filepaths[i], Path.GetFileName(filepaths[i]));
+
+                    for (int j = 0; j < messages.Length; j++)
+                    {
+                        this.sendFileRepo.AddFileHeaderAndPieces(messages[j]);
+                    }
+                }
+            }
 
             Sender.Tell(newManifest);
         }
