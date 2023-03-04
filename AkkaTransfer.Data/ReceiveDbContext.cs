@@ -10,7 +10,7 @@ namespace AkkaTransfer.Data
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=receive.db");
+            optionsBuilder.UseSqlite("Data Source=receive.sqlite");
         }
 
         public DbSet<ReceiveFileHeader> ReceiveFileHeaders { get; set; }
