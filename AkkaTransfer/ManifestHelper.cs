@@ -37,9 +37,9 @@ namespace AkkaTransfer
             return this.manifestRepository.LoadNewestManifest();
         }
 
-        private void WriteManifestToDB(Manifest directoryManifest)
+        public void WriteManifestToDB(Manifest manifest)
         {
-            this.manifestRepository.Save(directoryManifest);
+            this.manifestRepository.Save(manifest);
         }
 
         private Manifest MapManifestFromDirectory(string directory)
