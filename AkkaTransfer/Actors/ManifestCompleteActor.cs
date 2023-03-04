@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
+using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
 {
@@ -16,6 +17,8 @@ namespace AkkaTransfer.Actors
 
             Receive<string>(filename =>
             {
+                Debug.WriteLine($"Received string: {filename}", nameof(ManifestCompleteActor));
+
                 IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(new DbContextFactory());
 
                 completedFiles.Add(filename);

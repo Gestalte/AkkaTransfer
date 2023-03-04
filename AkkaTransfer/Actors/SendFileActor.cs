@@ -24,6 +24,8 @@ namespace AkkaTransfer.Actors
 
         public void SendFile(string filename)
         {
+            System.Diagnostics.Debug.WriteLine($"Received string: {filename}", nameof(SendFileActor));
+
             SendFileHeaderRepository sendFileHeaderRepository = new SendFileHeaderRepository(new DbContextFactory());
 
             var fileHeader = sendFileHeaderRepository.GetFileHeaderByFilename(filename);
@@ -42,6 +44,8 @@ namespace AkkaTransfer.Actors
 
         public void SendMissingFilePart(MissingFilePart missingPart)
         {
+            System.Diagnostics.Debug.WriteLine($"Received MissingFilePart: {missingPart}", nameof(SendFileActor));
+
             SendFileHeaderRepository sendFileHeaderRepository = new SendFileHeaderRepository(new DbContextFactory());
 
             var fileHeader = sendFileHeaderRepository.GetFileHeaderByFilename(missingPart.Filename);

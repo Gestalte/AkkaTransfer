@@ -1,6 +1,8 @@
-﻿using Akka.Util.Internal;
+﻿using Akka.Event;
+using Akka.Util.Internal;
 using AkkaTransfer.Common;
 using AkkaTransfer.Data.Manifest;
+using Microsoft.EntityFrameworkCore.Diagnostics.Internal;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -70,9 +72,17 @@ namespace AkkaTransfer
 
         public static void PrintManifest(Manifest manifest)
         {
+            System.Diagnostics.Debug.WriteLine("Manifest creation:" + manifest.Timesstamp);
+            System.Diagnostics.Debug.WriteLine("Manifest content:");
+
             Console.WriteLine("Manifest creation:" + manifest.Timesstamp);
             Console.WriteLine("Manifest content:");
-            manifest.Files.ForEach(f => Console.WriteLine($"\t{f.Filename}\t{f.FileHash}"));
+
+            manifest.Files.ForEach(f =>
+            {
+                System.Diagnostics.Debug.WriteLine($"\t{f.Filename}\t{f.FileHash}");
+                Console.WriteLine($"\t{f.Filename}\t{f.FileHash}");
+            });
         }
     }
 }

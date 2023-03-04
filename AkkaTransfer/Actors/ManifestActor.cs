@@ -4,6 +4,7 @@ using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
 using AkkaTransfer.Data.SendFile;
+using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
 {
@@ -30,6 +31,8 @@ namespace AkkaTransfer.Actors
         // File sending actor
         public void SendManifest(ManifestRequest _)
         {
+            Debug.WriteLine($"{nameof(SendManifest)} Receive ManifestRequest:", nameof(ManifestActor));
+
             SendManifestRepository sendManifestRepository = new SendManifestRepository(new ReceiveDbContext());
             SendFileHeaderRepository sendFileRepo = new SendFileHeaderRepository(new DbContextFactory());
 
@@ -63,6 +66,8 @@ namespace AkkaTransfer.Actors
         // File receiving actor
         public void RequestManifest(SendManifestRequest _)
         {
+            Debug.WriteLine($"{nameof(RequestManifest)} Receive SendManifestRequest:", nameof(ManifestActor));
+
             FileBox fileBox = new("ReceiveBox");
 
             var receiveManifestRepository = new ReceiveManifestRepository(new DbContextFactory());
@@ -74,6 +79,7 @@ namespace AkkaTransfer.Actors
             var receivedManifest = manifestActor.Ask<Manifest>(new ManifestRequest(), TimeSpan.FromSeconds(5)).Result;
 
             Console.Out.WriteLine("Received Manifest:");
+            Debug.WriteLine("Received Manifest:");
             ManifestHelper.PrintManifest(receivedManifest);
 
             // Calculate which files to ask for.

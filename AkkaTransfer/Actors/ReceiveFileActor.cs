@@ -1,4 +1,5 @@
 ﻿using Akka.Actor;
+using Akka.Event;
 using AkkaTransfer.Common;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.ReceiveFile;
@@ -15,6 +16,8 @@ namespace AkkaTransfer.Actors
 
             Receive<FilePartMessage>(message =>
             {
+                System.Diagnostics.Debug.WriteLine($"Received FilePartMessage: {message}", nameof(ReceiveFileActor));
+
                 ReceiveFileHeaderRepository fileHeaderRepository = new(new DbContextFactory());
 
                 System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");

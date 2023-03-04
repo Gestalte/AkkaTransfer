@@ -2,6 +2,7 @@
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
+using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
 {
@@ -28,16 +29,20 @@ namespace AkkaTransfer.Actors
 
         public void Awake()
         {
-            Console.WriteLine("Awake", nameof(FileReceiveTimeoutActor));
+            Debug.WriteLine(nameof(Awake), nameof(FileReceiveTimeoutActor));
+
             this.schedulerCancel = this.scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
 
             Receive<int>(id =>
             {
+                Debug.WriteLine($"Receive id: {id}", nameof(FileReceiveTimeoutActor));
                 LastReceivedTimestamp = DateTime.UtcNow;
             });
 
             Receive<EmptyMessage>(msg =>
             {
+                Debug.WriteLine($"Receive EmptyMessage: ", nameof(FileReceiveTimeoutActor));
+
                 if (DateTime.UtcNow - LastReceivedTimestamp > TimeSpan.FromSeconds(10.0))
                 {
                     var receiveFileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
@@ -60,7 +65,8 @@ namespace AkkaTransfer.Actors
 
         public void Sleeping()
         {
-            Console.WriteLine("Sleeping", nameof(FileReceiveTimeoutActor));
+            Debug.WriteLine(nameof(Sleeping), nameof(FileReceiveTimeoutActor));
+
             this.schedulerCancel?.Cancel();
 
             Receive<int>(x => Become(Awake));

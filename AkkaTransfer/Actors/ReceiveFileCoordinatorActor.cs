@@ -21,6 +21,8 @@ namespace AkkaTransfer.Actors
 
             Receive<FilePartMessage>(message =>
             {
+                System.Diagnostics.Debug.WriteLine($"Received FilePartMessage: {message}", nameof(ReceiveFileCoordinatorActor));
+
                 FilePartMessageReceived?.Invoke(message);
                 receiveRouter.Tell(message);
             });

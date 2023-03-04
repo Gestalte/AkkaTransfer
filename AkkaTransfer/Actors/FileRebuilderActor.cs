@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.ReceiveFile;
+using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
 {
@@ -15,13 +16,15 @@ namespace AkkaTransfer.Actors
 
             this.timeoutActor = Context.ActorSelection($"akka://file-transfer-system/user/file-receive-timeout-actor");
 
-            Receive<int>(async id => await WriteFileIfComplete(id));
+            Receive<int>(WriteFileIfComplete);
         }
 
         private List<int> idsToCheck = new();
 
-        public async Task WriteFileIfComplete(int id)
+        public void WriteFileIfComplete(int id)
         {
+            Debug.WriteLine($"{nameof(WriteFileIfComplete)} Receive id: {id}", nameof(FileRebuilderActor));
+
             this.timeoutActor.Tell(id);
 
             if (idsToCheck.Contains(id) == false)
@@ -42,10 +45,10 @@ namespace AkkaTransfer.Actors
                     var headerPieces = header!.ReceiveFilePieces
                         //.AsParallel()
                         //.AsOrdered()
-                        .Select(s=>(s.Position,s.Content))
+                        .Select(s => (s.Position, s.Content))
                         .Distinct()
                         .OrderBy(o => o.Position)
-                        .Select(s=>s.Content)
+                        .Select(s => s.Content)
                         .Aggregate((a, b) => a + b);
 
                     byte[] newBytes = Convert.FromBase64String(headerPieces);

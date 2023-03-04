@@ -16,17 +16,21 @@ namespace AkkaTransfer.Actors
 
             Receive<Manifest>(manifest =>
             {
+                System.Diagnostics.Debug.WriteLine($"Received Manifest: {manifest}", nameof(SendFileCoordinator));
+
                 manifest.Files
-                .Select(s => s.Filename)
-                .ToList()
-                .ForEach(filename =>
-                {
-                    sendFileRouter.Tell(filename);
-                });
+                    .Select(s => s.Filename)
+                    .ToList()
+                    .ForEach(filename =>
+                    {
+                        sendFileRouter.Tell(filename);
+                    });
             });
 
             Receive<MissingFileParts>(missingParts =>
             {
+                System.Diagnostics.Debug.WriteLine($"Received MissingFileParts: {missingParts}", nameof(SendFileCoordinator));
+
                 missingParts.FileParts.ForEach(s => sendFileRouter.Tell(s));
             });
         }
