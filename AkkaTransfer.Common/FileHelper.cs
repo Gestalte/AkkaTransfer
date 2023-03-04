@@ -11,8 +11,6 @@ namespace AkkaTransfer
             var bytes = File.ReadAllBytes(pathToSend);
             var base64 = Convert.ToBase64String(bytes);
 
-            Console.WriteLine(base64);
-
             // if base64.Length / batchSize has a rest, add 1 so that an
             // incomplete batch is still created.
             var batchCount = (base64.Length / batchSize) + ((base64.Length % batchSize) > 0 ? 1 : 0);
