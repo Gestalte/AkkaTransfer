@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace AkkaTransfer.Data.Manifest
 {
@@ -17,14 +18,16 @@ namespace AkkaTransfer.Data.Manifest
         {
             ReceiveManifest? dbManifest = this.context.ReceiveManifests
                 .AsNoTracking()
-                .Include(i=>i.ReceiveManifestFiles)
-                .OrderBy(o => o.Timestamp)
+                .Include(i => i.ReceiveManifestFiles)
+                .OrderByDescending(o => o.Timestamp)
                 .FirstOrDefault();
 
             if (dbManifest == null)
             {
                 return new Common.Manifest(DateTime.MinValue, new HashSet<Common.ManifestFile>());
             }
+
+            Debug.WriteLine(nameof(LoadNewestManifest)+ " Manifest File count: "+ dbManifest.ReceiveManifestFiles.Count, nameof(ReceiveManifestRepository));
 
             var files = dbManifest.ReceiveManifestFiles
                 .Select(s => new Common.ManifestFile(s.Filename, s.FileHash))
@@ -36,6 +39,9 @@ namespace AkkaTransfer.Data.Manifest
 
         public void Save(Common.Manifest manifest)
         {
+            System.Diagnostics.Debug.WriteLine(nameof(Save), nameof(ReceiveManifestRepository));
+            System.Diagnostics.Debug.WriteLine("Manifest file count: " + manifest.Files.Count, nameof(ReceiveManifestRepository));
+
             var manifestToSave = new ReceiveManifest
             {
                 Timestamp = manifest.Timesstamp,
