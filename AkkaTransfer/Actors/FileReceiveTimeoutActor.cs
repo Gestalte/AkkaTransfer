@@ -31,7 +31,7 @@ namespace AkkaTransfer.Actors
         {
             Debug.WriteLine(nameof(Awake), nameof(FileReceiveTimeoutActor));
 
-            this.schedulerCancel = this.scheduler.ScheduleTellRepeatedlyCancelable(0, 1000, Self, new EmptyMessage(), Self);
+            this.schedulerCancel = this.scheduler.ScheduleTellRepeatedlyCancelable(0, 10000, Self, new EmptyMessage(), Self);
 
             Receive<int>(id =>
             {
