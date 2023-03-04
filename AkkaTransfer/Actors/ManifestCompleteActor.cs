@@ -1,6 +1,7 @@
 ﻿using Akka.Actor;
 using AkkaTransfer.Data;
 using AkkaTransfer.Data.Manifest;
+using AkkaTransfer.Data.ReceiveFile;
 using System.Diagnostics;
 
 namespace AkkaTransfer.Actors
@@ -21,6 +22,8 @@ namespace AkkaTransfer.Actors
 
                 IManifestRepository receiveManifestRepo = new ReceiveManifestRepository(new DbContextFactory());
 
+                IReceiveFileHeaderRepository receiveFileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
+
                 completedFiles.Add(filename);
 
                 var manifest = receiveManifestRepo.LoadNewestManifest();
@@ -32,6 +35,8 @@ namespace AkkaTransfer.Actors
 
                 if (!filesNotReceived.Any())
                 {
+                    receiveFileHeaderRepository.DeleteAll();
+
                     ManifestReceived?.Invoke();
                 }
             });

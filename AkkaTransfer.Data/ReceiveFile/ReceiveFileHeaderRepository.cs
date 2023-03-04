@@ -36,12 +36,18 @@ namespace AkkaTransfer.Data.ReceiveFile
                 .Include(i => i.ReceiveFilePieces)
                 .FirstOrDefault();
 
-            //foreach (var piece in header.FilePieces)
-            //{
-            //    header.FilePieces.Remove(piece);
-            //}
-
             context.ReceiveFileHeaders.Remove(header);
+            context.SaveChanges();
+        }
+
+        public void DeleteAll()
+        {
+            var headers = context.ReceiveFileHeaders
+                .AsNoTracking()
+                .Include(i => i.ReceiveFilePieces)
+                .ToList();
+
+            context.ReceiveFileHeaders.RemoveRange(headers);
             context.SaveChanges();
         }
 
