@@ -13,41 +13,50 @@ namespace AkkaTransfer.Actors
         {
             this.receiveBox = receiveBox;
 
-            this.timeoutActor = Context.ActorSelection($"/user/file-receive-timeout-actor");
+            this.timeoutActor = Context.ActorSelection($"akka://file-transfer-system/user/file-receive-timeout-actor");
 
             Receive<int>(async id => await WriteFileIfComplete(id));
         }
+
+        private List<int> idsToCheck = new();
 
         public async Task WriteFileIfComplete(int id)
         {
             this.timeoutActor.Tell(id);
 
-            ReceiveFileHeaderRepository fileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
-
-            if (fileHeaderRepository.HasEntireFileBeenReceived(id))
+            if (idsToCheck.Contains(id) == false)
             {
-                var header = fileHeaderRepository.GetFileHeaderById(id);
-
-                var headerPieces = header!.ReceiveFilePieces
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(s => s.Content)
-                    .Aggregate((a, b) => a + b);
-
-                byte[] newBytes = Convert.FromBase64String(headerPieces);
-
-                File.WriteAllBytes(Path.Combine(this.receiveBox.BoxPath, header.FileName), newBytes);
-
-                fileHeaderRepository.DeleteFileHeader(id);
-
-                var manifestCompleteActor = Context.ActorSelection("/user/manifest-complete-actor"); // TODO: test that this works.
-                manifestCompleteActor.Tell(header.FileName);
+                idsToCheck.Add(id);
             }
-            else
-            {
-                Thread.Sleep(5000);
 
-                await WriteFileIfComplete(id);
+            ReceiveFileHeaderRepository fileHeaderRepository = new(new DbContextFactory());
+
+            for (int i = 0; i < idsToCheck.Count; i++)
+            {
+                var checkId = idsToCheck[i];
+
+                if (fileHeaderRepository.HasEntireFileBeenReceived(checkId))
+                {
+                    var header = fileHeaderRepository.GetFileHeaderById(checkId);
+
+                    var headerPieces = header!.ReceiveFilePieces
+                        //.AsParallel()
+                        //.AsOrdered()
+                        .Select(s=>(s.Position,s.Content))
+                        .Distinct()
+                        .OrderBy(o => o.Position)
+                        .Select(s=>s.Content)
+                        .Aggregate((a, b) => a + b);
+
+                    byte[] newBytes = Convert.FromBase64String(headerPieces);
+
+                    File.WriteAllBytes(Path.Combine(this.receiveBox.BoxPath, header.FileName), newBytes);
+
+                    fileHeaderRepository.DeleteFileHeader(checkId);
+
+                    var manifestCompleteActor = Context.ActorSelection("akka://file-transfer-system/user/manifest-complete-actor");
+                    manifestCompleteActor.Tell(header.FileName);
+                }
             }
         }
     }
