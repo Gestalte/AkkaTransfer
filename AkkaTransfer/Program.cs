@@ -7,6 +7,7 @@ using AkkaTransfer.Data.ReceiveFile;
 using AkkaTransfer.Data.SendFile;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace AkkaTransfer
 {
@@ -55,12 +56,19 @@ namespace AkkaTransfer
             {
                 Thread.Sleep(10);
 
+                if (progressBar.ReceivedPieces.Contains((f.Filename, f.Position)))
+                {
+                    return;
+                }
+                
                 if (progressBar.progressBars.ContainsKey(f.Filename))
                 {
                     int position = progressBar.progressBars[f.Filename].position;
                     int progress = progressBar.progressBars[f.Filename].progress;
 
                     var localProgress = progress + 1;
+
+                    Debug.WriteLine($"{f.Filename} progress: {localProgress}", nameof(Main));
 
                     progressBar.UpdateProgressBar(f.Filename, f.Count, progress, position);
 
@@ -71,6 +79,8 @@ namespace AkkaTransfer
                     var (fileName, position, progress) = progressBar.DrawProgressBar(f.Filename, f.Count, 1);
                     progressBar.progressBars.Add(fileName, (position, progress));
                 }
+
+                progressBar.ReceivedPieces.Add((f.Filename, f.Position));
             };
 
             Props rebuildProps = Props.Create(() => new FileRebuilderActor(fileReceiveBox));
@@ -126,35 +136,64 @@ namespace AkkaTransfer
 
         public (string fileName, int position, int progress) DrawProgressBar(string filename, int length, int progress)
         {
-            float percent = ((float)progress / length) * 50;
+            float percent = (float)progress / length * 100;
 
             string barLength = "";
-            if (percent > 1)
+
+            if (percent > 100)
             {
-                barLength = Enumerable.Range(0, (int)percent).Select(i => "=").Aggregate((a, b) => a + b);
+                percent = 100;
             }
+
+            float disiredLength = percent / 2.0f;
+
+            if (disiredLength > 1)
+            {
+                barLength = Enumerable.Range(0, (int)disiredLength)
+                    .Select(i => "=")
+                    .Aggregate((a, b) => a + b);
+            }
+
             Console.WriteLine("{0}[{1}]", filename.PadRight(48), barLength.PadRight(50));
 
             return (filename, Console.CursorTop - 1, 1);
         }
 
+        string lenSpaces = Enumerable.Range(0, 100).Select(i => " ").Aggregate((a, b) => a + b);
+
+        public List<(string,int)> ReceivedPieces = new();
+
         public void UpdateProgressBar(string filename, int length, int progress, int position)
         {
-            var lenSpaces = Enumerable.Range(0, 100).Select(i => " ").Aggregate((a, b) => a + b);
-
             var currentPos = Console.CursorTop;
+
             Console.SetCursorPosition(0, Console.CursorTop - (currentPos - position));
 
             Console.Write(lenSpaces);
 
+            float percent = (float)progress / length * 100;
+
+            string barLength = "";
+
+            if (percent > 100)
+            {
+                percent = 100;
+            }
+
+            float disiredLength = percent / 2.0f;
+
+            if (disiredLength > 1)
+            {
+                barLength = Enumerable.Range(0, (int)disiredLength)
+                    .Select(i => "=")
+                    .Aggregate((a, b) => a + b);
+            }
+
             Console.SetCursorPosition(0, Console.CursorTop);
 
-            float percent = ((float)progress / length) * 50;
-            string barLength = "";
-            if (percent > 1)
-            {
-                barLength = Enumerable.Range(0, (int)percent).Select(i => "=").Aggregate((a, b) => a + b);
-            }
+            Debug.Assert(percent < 101);
+            Debug.Assert(barLength.Length < 101);
+
             Console.WriteLine("{0}[{1}]", filename.PadRight(48), barLength.PadRight(50));
 
             Console.SetCursorPosition(0, currentPos);
