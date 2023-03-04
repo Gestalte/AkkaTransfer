@@ -6,6 +6,7 @@ using AkkaTransfer.Data.Manifest;
 using AkkaTransfer.Data.ReceiveFile;
 using AkkaTransfer.Data.SendFile;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace AkkaTransfer
 {
@@ -52,15 +53,23 @@ namespace AkkaTransfer
 
             ReceiveFileCoordinatorActor.FilePartMessageReceived += f =>
             {
-                if (progressBar.progressBars.Select(s => s.Item1).Contains(f.Filename))
+                Thread.Sleep(10);
+
+                if (progressBar.progressBars.ContainsKey(f.Filename))
                 {
-                    (string fileName, int position, int progress) = progressBar.progressBars.Where(w => w.Item1 == f.Filename).FirstOrDefault();
+                    int position = progressBar.progressBars[f.Filename].position;
+                    int progress = progressBar.progressBars[f.Filename].progress;
+
+                    var localProgress = progress + 1;
 
                     progressBar.UpdateProgressBar(f.Filename, f.Count, progress, position);
+
+                    progressBar.progressBars[f.Filename] = (position, localProgress);
                 }
                 else
                 {
-                    progressBar.DrawProgressBar(f.Filename, f.Count, 1);
+                    var (fileName, position, progress) = progressBar.DrawProgressBar(f.Filename, f.Count, 1);
+                    progressBar.progressBars.Add(fileName, (position, progress));
                 }
             };
 
@@ -113,7 +122,7 @@ namespace AkkaTransfer
 
     internal class ProgressBar
     {
-        public List<(string fileName, int position, int progress)> progressBars = new();
+        public Dictionary<string, (int position, int progress)> progressBars = new();
 
         public (string fileName, int position, int progress) DrawProgressBar(string filename, int length, int progress)
         {
@@ -126,15 +135,19 @@ namespace AkkaTransfer
             }
             Console.WriteLine("{0}[{1}]", filename.PadRight(48), barLength.PadRight(50));
 
-            return (filename, Console.GetCursorPosition().Top - 1, 1);
+            return (filename, Console.CursorTop - 1, 1);
         }
 
         public void UpdateProgressBar(string filename, int length, int progress, int position)
         {
-            var lenSpaces = Enumerable.Range(0, length).Select(i => " ").Aggregate((a, b) => a + b);
+            var lenSpaces = Enumerable.Range(0, 100).Select(i => " ").Aggregate((a, b) => a + b);
 
-            var currentPos = Console.GetCursorPosition().Top;
+            var currentPos = Console.CursorTop;
             Console.SetCursorPosition(0, Console.CursorTop - (currentPos - position));
+
+            Console.Write(lenSpaces);
+
+            Console.SetCursorPosition(0, Console.CursorTop);
 
             float percent = ((float)progress / length) * 50;
             string barLength = "";
