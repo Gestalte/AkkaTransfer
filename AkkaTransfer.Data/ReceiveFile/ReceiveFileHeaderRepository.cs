@@ -4,21 +4,6 @@ using System.Diagnostics;
 
 namespace AkkaTransfer.Data.ReceiveFile
 {
-    public class ReceiveFileHeaderRepositoryFactory
-    {
-        private readonly IDbContextFactory dbContextFactory;
-
-        public ReceiveFileHeaderRepositoryFactory(DbContextFactory dbContextFactory)
-        {
-            this.dbContextFactory = dbContextFactory;
-        }
-
-        public ReceiveFileHeaderRepository Create()
-        {
-            return new ReceiveFileHeaderRepository(dbContextFactory);
-        }
-    }
-
     public class ReceiveFileHeaderRepository : IReceiveFileHeaderRepository
     {
         private readonly ReceiveDbContext context;
@@ -38,6 +23,8 @@ namespace AkkaTransfer.Data.ReceiveFile
                 .Where(s => s.ReceiveFileHeaderId == Id)
                 .Include(i => i.ReceiveFilePieces.OrderBy(o => o.Position))
                 .FirstOrDefault();
+
+            // TODO: how to make ReceiveFilePieces Distinct?
         }
 #nullable disable
 
@@ -55,6 +42,7 @@ namespace AkkaTransfer.Data.ReceiveFile
             //}
 
             context.ReceiveFileHeaders.Remove(header);
+            context.SaveChanges();
         }
 
         public bool HasEntireFileBeenReceived(int fileHeaderId)
@@ -70,7 +58,11 @@ namespace AkkaTransfer.Data.ReceiveFile
                 return false;
             }
 
-            return header.PieceCount == header.ReceiveFilePieces.Count;
+            return header.PieceCount == header.ReceiveFilePieces
+                .Where(w => w.ReceiveFileHeaderId == fileHeaderId)
+                .Select(s => s.Position)
+                .Distinct()
+                .Count();
         }
 
         public int AddNewPieceUnitOfWork(FilePartMessage filePartMessage)
