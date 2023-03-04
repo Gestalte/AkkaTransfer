@@ -81,6 +81,8 @@ namespace AkkaTransfer.Actors
 
             Manifest difference = receiverManifestHelper.Difference(oldManifest, receivedManifest);
 
+            receiverManifestHelper.WriteManifestToDB(difference);
+
             Console.Out.WriteLine();
             Console.Out.WriteLine("Local files differ by:");
             ManifestHelper.PrintManifest(difference);
