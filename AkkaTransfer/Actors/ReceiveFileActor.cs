@@ -18,7 +18,6 @@ namespace AkkaTransfer.Actors
                 ReceiveFileHeaderRepository fileHeaderRepository = new ReceiveFileHeaderRepository(new DbContextFactory());
 
                 System.Diagnostics.Debug.WriteLine($"Receive part {message.Position} of {message.Count}");
-                Console.WriteLine($"Receive part {message.Position} of {message.Count}");
 
                 var id = fileHeaderRepository.AddNewPieceUnitOfWork(message);
 
