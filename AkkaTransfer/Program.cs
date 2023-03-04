@@ -68,8 +68,6 @@ namespace AkkaTransfer
 
                     var localProgress = progress + 1;
 
-                    Debug.WriteLine($"{f.Filename} progress: {localProgress}", nameof(Main));
-
                     progressBar.UpdateProgressBar(f.Filename, f.Count, progress, position);
 
                     progressBar.progressBars[f.Filename] = (position, localProgress);
@@ -162,6 +160,8 @@ namespace AkkaTransfer
         string lenSpaces = Enumerable.Range(0, 100).Select(i => " ").Aggregate((a, b) => a + b);
 
         public List<(string,int)> ReceivedPieces = new();
+
+        // TODO: update progress bars so that they are full when the whole file has been received.
 
         public void UpdateProgressBar(string filename, int length, int progress, int position)
         {

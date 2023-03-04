@@ -87,6 +87,8 @@ namespace AkkaTransfer.Actors
 
             Manifest difference = receiverManifestHelper.Difference(oldManifest, receivedManifest);
 
+            // TODO: If fileparts that are in difference are already in the db, set missing  files instead.
+
             receiverManifestHelper.WriteManifestToDB(difference);
 
             Console.Out.WriteLine();
