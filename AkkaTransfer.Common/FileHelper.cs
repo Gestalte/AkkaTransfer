@@ -1,4 +1,5 @@
 ﻿using AkkaTransfer.Common;
+using System.Diagnostics;
 
 namespace AkkaTransfer
 {
@@ -8,6 +9,8 @@ namespace AkkaTransfer
 
         public static FilePartMessage[] SplitIntoMessages(string pathToSend, string filename)
         {
+            Debug.WriteLine($"{nameof(SplitIntoMessages)} Filename: {filename}",nameof(FileHelper));
+
             var bytes = File.ReadAllBytes(pathToSend);
             var base64 = Convert.ToBase64String(bytes);
 

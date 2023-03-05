@@ -39,8 +39,7 @@ namespace AkkaTransfer.Data.Manifest
 
         public void Save(Common.Manifest manifest)
         {
-            System.Diagnostics.Debug.WriteLine(nameof(Save), nameof(ReceiveManifestRepository));
-            System.Diagnostics.Debug.WriteLine("Manifest file count: " + manifest.Files.Count, nameof(ReceiveManifestRepository));
+            System.Diagnostics.Debug.WriteLine($"{nameof(Save)} Manifest file count: {manifest.Files.Count}", nameof(ReceiveManifestRepository));            
 
             var manifestToSave = new ReceiveManifest
             {
@@ -56,11 +55,5 @@ namespace AkkaTransfer.Data.Manifest
             this.context.ReceiveManifests.Add(manifestToSave);
             this.context.SaveChanges();
         }
-    }
-
-    public interface IManifestRepository
-    {
-        Common.Manifest LoadNewestManifest();
-        void Save(Common.Manifest manifest);
     }
 }

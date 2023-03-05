@@ -17,10 +17,15 @@ namespace AkkaTransfer
         {
             var dbContext = new ReceiveDbContext();
 
+            Debug.WriteLine("Checking for DB migrations...");
             if (dbContext.Database.GetPendingMigrations().ToList().Count != 0)
             {
+                Debug.WriteLine("Applying DB migrations...");
                 dbContext.Database.Migrate();
             }
+            Debug.WriteLine("Migrations finished.");
+
+            Debug.WriteLine("Creating Actors...");
 
             ProgressBar progressBar = new();
 
@@ -96,6 +101,8 @@ namespace AkkaTransfer
 
                 RequestInput(manifestActor);
             };
+
+            Debug.WriteLine("Finished Creating Actors.");
 
             RequestInput(manifestActor);
 

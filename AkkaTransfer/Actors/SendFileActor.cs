@@ -60,5 +60,10 @@ namespace AkkaTransfer.Actors
                 sendRouter.Tell(part);
             }
         }
+
+        public void PrintMissingPart(MissingFilePart missingPart)
+        {
+            Console.WriteLine();
+        }
     }
 }

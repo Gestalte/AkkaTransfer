@@ -2,6 +2,7 @@
 using Akka.Routing;
 using AkkaTransfer.Common;
 using AkkaTransfer.Data.SendFile;
+using System.Security.Cryptography.X509Certificates;
 
 namespace AkkaTransfer.Actors
 {
@@ -29,9 +30,19 @@ namespace AkkaTransfer.Actors
 
             Receive<MissingFileParts>(missingParts =>
             {
-                System.Diagnostics.Debug.WriteLine($"Received MissingFileParts: {missingParts}", nameof(SendFileCoordinator));
+                System.Diagnostics.Debug.WriteLine($"Received MissingFileParts:", nameof(SendFileCoordinator));
+                PrintMissingParts(missingParts);
 
                 missingParts.FileParts.ForEach(s => sendFileRouter.Tell(s));
+            });
+        }
+
+        private void PrintMissingParts(MissingFileParts missingParts)
+        {
+            missingParts.FileParts.ForEach(f =>
+            {
+                System.Diagnostics.Debug.WriteLine("\tFilename: " + f.Filename, nameof(SendFileCoordinator));
+                System.Diagnostics.Debug.WriteLine("\tMissing piece count:" + f.MissingPiecePositions.Count, nameof(SendFileCoordinator));
             });
         }
     }

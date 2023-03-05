@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AkkaTransfer.Common;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +31,8 @@ namespace AkkaTransfer.Data.Manifest
                 return new Common.Manifest(DateTime.MinValue, new HashSet<Common.ManifestFile>());
             }
 
+            Debug.WriteLine(nameof(LoadNewestManifest) + " Manifest File count: " + dbManifest.SendManifestFiles.Count, nameof(SendManifestRepository));
+
             var files = dbManifest.SendManifestFiles
                 .Select(s => new Common.ManifestFile(s.Filename, s.FileHash))
                 .ToHashSet();
@@ -39,6 +43,8 @@ namespace AkkaTransfer.Data.Manifest
 
         public void Save(Common.Manifest manifest)
         {
+            Debug.WriteLine(nameof(Save) + " Manifest File count: " + manifest.Files.Count, nameof(SendManifestRepository));
+
             var manifestToSave = new SendManifest
             {
                 Timestamp = manifest.Timesstamp,
